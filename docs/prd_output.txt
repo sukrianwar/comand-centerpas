@@ -1,0 +1,365 @@
+PRODUCT REQUIREMENTS DOCUMENT
+Aplikasi Guard Tour
+Digitalisasi Patroli Keamanan — Deployment On-Premise (Jaringan Lokal)
+
+Riwayat Revisi
+
+Daftar Isi
+
+1. Latar Belakang
+Perusahaan yang memiliki petugas keamanan (security) membutuhkan sistem untuk memastikan setiap patroli dilakukan sesuai jadwal dan rute yang telah ditentukan. Saat ini proses patroli masih dilakukan secara manual menggunakan buku patroli sehingga memiliki beberapa kendala, seperti:
+Sulit mengetahui apakah petugas benar-benar melakukan patroli.
+Tidak ada bukti waktu patroli secara real-time.
+Sulit membuat laporan patroli.
+Sulit mengetahui apabila terdapat titik patroli yang terlewat.
+Pelaporan temuan masih menggunakan WhatsApp sehingga data tidak terpusat.
+Aplikasi Guard Tour dibuat untuk mendigitalisasi proses patroli sehingga seluruh aktivitas security dapat dipantau secara real-time.
+2. Tujuan Produk
+Membangun sistem Guard Tour yang mampu:
+Memastikan seluruh checkpoint dikunjungi sesuai jadwal.
+Mencatat waktu patroli secara otomatis dan tidak dapat dimanipulasi (server-time based).
+Menyediakan bukti patroli menggunakan QR Code statis dengan validasi lokasi wajib.
+Melaporkan temuan secara langsung dengan alur approval yang jelas.
+Menampilkan monitoring patroli secara real-time beserta notifikasi eskalasi.
+Menghasilkan laporan patroli secara otomatis.
+Berjalan mandiri di infrastruktur internal perusahaan (on-premise) tanpa bergantung pada koneksi internet publik.
+3. Stakeholder
+4. Target User
+Primary User
+Security Guard (akses via Web App di browser HP/tablet)
+Secondary User
+Team Leader
+Supervisor
+Manager
+Admin
+5. Platform & Arsitektur Sistem
+5.1 Fase Pengembangan
+5.2 Model Deployment
+Sistem di-deploy pada server on-premise yang ditempatkan di lokasi perusahaan (data center internal/ruang server kantor).
+Seluruh akses (Web Dashboard maupun Web App Patrol) dilakukan melalui jaringan lokal perusahaan (LAN/WiFi internal), bukan melalui internet publik.
+Tidak ada dependensi terhadap layanan cloud pihak ketiga untuk operasional inti pada Fase 1.
+Akses dari luar jaringan kantor (remote) tidak didukung pada Fase 1, kecuali perusahaan menyediakan VPN internal (masuk sebagai future enhancement).
+5.3 Platform
+Web Dashboard — untuk Admin, Supervisor, Manager
+Web App Patrol — untuk Security, diakses via browser (mobile-responsive), Fase 1
+API Backend — berjalan di server lokal
+Database — Mysql, berjalan di server lokal yang sama/berdekatan dengan API Backend  [v1.3]
+Mobile App Android (native) — untuk Security, Fase 2  [ROADMAP FASE 2]
+6. Ruang Lingkup
+In Scope — Fase 1 (Web, On-Premise)
+Login & Role Management
+Jadwal Patroli
+Scan QR Code statis melalui kamera browser (WebRTC), dengan fallback input kode manual
+GPS Tracking & Validasi Lokasi (mandatory) — menggunakan Geolocation API browser
+Offline Mode dengan penyimpanan lokal perangkat & antrian sinkronisasi otomatis (queue)  [v1.4]
+Pelaporan Temuan (Incident) dengan Approval Lifecycle
+Notifikasi & Eskalasi (in-app, dashboard, email; browser notification)
+Panic Button versi Web (memerlukan halaman aplikasi aktif)
+Dashboard Monitoring
+Report Patrol (ekspor PDF/Excel)
+Master Data
+Audit Trail
+Out of Scope Fase 1 — Roadmap Fase 2
+Mobile App Android native untuk Security  [FASE 2]
+Scan NFC  [FASE 2]
+QR Code dinamis (rotasi berkala)  [FASE 2 / OPSIONAL]
+Akses remote via VPN  [FASE 2]
+Out of Scope (Tetap)
+Payroll
+Attendance
+CCTV Monitoring (integrasi disiapkan untuk fase berikutnya)
+Visitor Management
+7. User Flow
+7.1 Flow Utama Patroli — Web App (Fase 1)
+Login melalui browser (HP/tablet terhubung WiFi internal perusahaan)
+Pilih Jadwal
+Mulai Patrol (browser meminta izin akses lokasi/GPS)
+Datang ke Checkpoint
+Buka kamera melalui halaman web untuk Scan QR Code statis (atau input manual kode checkpoint jika kamera tidak tersedia)
+Validasi Lokasi (radius) & Validasi Waktu Server
+Aplikasi mengecek status koneksi ke jaringan WiFi kantor
+Jika Terhubung → data langsung terkirim & tersimpan ke server
+Jika Terputus → aplikasi otomatis masuk Mode Offline: data disimpan sementara di penyimpanan lokal perangkat (IndexedDB) dan ditandai status "Menunggu Sinkronisasi"
+Guard tetap dapat melanjutkan checkpoint berikutnya seperti biasa selama masih offline; setiap hasil scan baru ditambahkan ke antrian lokal
+Begitu perangkat kembali terhubung ke WiFi kantor, aplikasi otomatis mengirim seluruh data dalam antrian secara berurutan (FIFO) ke server
+Checkpoint Berhasil
+Lanjut Checkpoint Berikutnya
+Selesai Patrol
+Generate Report
+7.2 Flow Incident Report
+Security membuat laporan temuan (New) melalui Web App
+Laporan masuk ke antrian review Supervisor (In Review)
+Supervisor Approve atau Reject disertai catatan
+Jika Approved → status Closed / Follow-up Required
+Jika kategori kritis (kebakaran, kecelakaan) → auto-eskalasi ke Manager via notifikasi in-app/email
+8. User Roles
+Admin
+Kelola User
+Kelola Area
+Kelola Checkpoint & cetak QR Code statis
+Kelola Jadwal
+Lihat Semua Report
+Lihat Audit Trail
+Monitoring status server & jaringan lokal
+Security
+Login melalui Web App (browser)
+Lihat Jadwal
+Mulai Patrol
+Scan QR Code statis via kamera browser / input manual
+Upload Temuan (Incident)
+Selesai Patrol
+Trigger Panic Button (versi Web)
+Supervisor
+Monitoring Patrol
+Melihat Report
+Approve/Reject Incident (dengan histori keputusan)
+Menerima notifikasi eskalasi checkpoint terlewat
+Manager
+Dashboard KPI
+Report Bulanan
+Statistik
+Menerima eskalasi incident kritis & panic button
+9. Functional Requirement
+9.1 Modul Login
+Fitur
+Login
+Logout
+Forgot Password
+Acceptance Criteria
+Login berhasil menggunakan username dan password.
+User diarahkan sesuai role.
+Login hanya dapat diakses dari dalam jaringan lokal perusahaan (LAN/WiFi internal).
+Token JWT memiliki masa berlaku (expiry) dan didukung refresh token.
+Percobaan login gagal berulang kali akan memicu lockout sementara.
+9.2 Dashboard
+Admin
+Total User
+Total Area
+Total Checkpoint
+Patrol Hari Ini
+Patrol Selesai
+Patrol Terlambat
+Status server & konektivitas jaringan lokal
+Security
+Jadwal Hari Ini
+Patrol Aktif
+Patrol Berikutnya
+Supervisor
+Patrol Sedang Berjalan
+Patrol Belum Dimulai
+Patrol Terlambat
+Antrian Incident menunggu approval
+10. Modul Area
+CRUD Area — Data:
+Nama Area
+Kode Area
+Lokasi
+11. Modul Checkpoint
+CRUD Checkpoint — Field:
+Nama Checkpoint
+Area
+QR Code (statis — digenerate sekali dan dicetak/ditempel permanen di lokasi checkpoint)
+Latitude
+Longitude
+Radius
+Foto
+12. Modul Jadwal Patrol
+CRUD Jadwal — Field:
+Nama Jadwal
+Security
+Area
+Shift
+Jam Mulai
+Jam Selesai
+Interval
+13. Modul Patrol
+Flow
+Start Patrol
+Browser meminta izin GPS
+Menuju Checkpoint
+Scan QR Code statis via kamera browser (atau input manual)
+Validasi Lokasi (radius, mandatory)
+Validasi Waktu (menggunakan server time, bukan device time)
+Valid → Simpan ke server (jika online) atau ke antrian lokal perangkat (jika offline)
+Next Checkpoint
+Data yang Disimpan
+User
+Checkpoint
+Jam Scan (timestamp saat data direkam di perangkat)
+Lokasi
+Foto (opsional)
+Status
+Status Sinkronisasi (Tersinkron / Menunggu Sinkronisasi)  [v1.4]
+Metadata foto (waktu & lokasi pengambilan) untuk validasi keaslian  [v1.1]
+Ketentuan Anti-Fraud
+Validasi lokasi (GPS + radius) bersifat wajib, bukan opsional.
+Saat online, timestamp scan diambil dari server time pada saat data diterima server, bukan jam perangkat, untuk mencegah manipulasi waktu.
+Saat offline, aplikasi menghitung selisih waktu (offset) antara jam perangkat dan jam server terakhir kali perangkat online, lalu menerapkan offset tersebut ke timestamp data yang direkam offline — sehingga waktu tetap akurat meski jam perangkat sedikit berbeda dengan jam server.  [v1.4]
+Data hasil scan offline yang selisih waktunya dengan server dianggap tidak wajar (mis. jam perangkat sengaja diubah jauh) akan ditandai sebagai "Perlu Verifikasi" pada dashboard Supervisor untuk ditinjau manual.  [v1.4]
+QR Code statis dilindungi lapisan/segel fisik di lokasi checkpoint agar tidak mudah dipindahkan atau digandakan (kontrol operasional, bukan sistem).
+Data foto bukti (jika diaktifkan) divalidasi metadata waktu & lokasinya.
+14. Modul Offline Mode & Antrian Sinkronisasi
+Beberapa titik checkpoint (basement, ruang panel, parkiran bawah tanah) berpotensi berada di luar jangkauan WiFi kantor. Modul ini memastikan aktivitas patroli tetap tercatat secara akurat meski perangkat security terputus sementara dari jaringan WiFi kantor, dengan data dikirim otomatis begitu koneksi kembali tersedia.
+Cara Kerja
+Aplikasi Web (PWA — Progressive Web App) secara berkala memeriksa status koneksi ke jaringan WiFi kantor.
+Selama terhubung, setiap hasil scan checkpoint langsung dikirim dan disimpan ke server (Mysql).
+Saat koneksi terputus, aplikasi otomatis beralih ke Mode Offline: hasil scan (checkpoint, waktu, lokasi, foto) disimpan sementara di penyimpanan lokal perangkat (IndexedDB pada browser), bukan dikirim ke server.
+Setiap data offline dicatat ke dalam antrian (queue) lokal dengan status "Menunggu Sinkronisasi", lengkap dengan timestamp saat data direkam di perangkat.
+Guard tetap dapat melanjutkan patroli checkpoint berikutnya tanpa hambatan; setiap hasil scan baru otomatis masuk ke antrian yang sama.
+Begitu perangkat kembali terhubung ke WiFi kantor, aplikasi otomatis mengirim seluruh data dalam antrian ke server secara berurutan (FIFO — First In, First Out) tanpa perlu aksi manual dari guard.
+Setelah suatu data berhasil dikirim dan dikonfirmasi tersimpan server, data tersebut dihapus dari antrian lokal dan statusnya berubah menjadi "Tersinkron".
+Timestamp resmi yang tercatat di server tetap mengacu pada waktu saat data direkam di perangkat (offline), bukan waktu saat data terkirim, sehingga akurasi waktu kunjungan checkpoint tetap terjaga.
+Fitur Pendukung
+Indikator status koneksi (Online/Offline) ditampilkan jelas di halaman utama Web App Patrol.
+Badge jumlah data yang masih dalam antrian ("3 data menunggu sinkronisasi") agar guard mengetahui progres pengiriman.
+Retry otomatis dengan jeda bertahap (exponential backoff) apabila percobaan kirim gagal, agar tidak membebani jaringan saat baru tersambung kembali.
+Data di penyimpanan lokal tetap aman tersimpan meskipun browser/tab ditutup atau perangkat dimatikan, dan akan otomatis dilanjutkan pengirimannya saat aplikasi dibuka kembali.
+Notifikasi ke Admin apabila terdapat data yang gagal sinkron dalam waktu lama (lihat tabel eskalasi bab 15).
+Ketentuan & Batasan
+Foto bukti temuan/incident yang diambil saat offline turut disimpan sementara di perangkat dan ikut dikirim saat sinkronisasi; ukuran file dikompresi otomatis agar tidak memenuhi kapasitas penyimpanan lokal.
+Resolusi konflik data (mis. jika ada perubahan jadwal saat guard offline) ditangani di sisi server berdasarkan timestamp asli data direkam.
+Panic Button tetap memerlukan koneksi aktif karena sifatnya darurat/real-time (lihat bab 16) — tidak dimasukkan ke dalam antrian offline.
+15. Modul Notifikasi & Eskalasi
+Mendefinisikan siapa yang diberi tahu, melalui kanal apa, dan dalam rentang waktu berapa lama sebelum suatu kondisi dianggap perlu eskalasi. Pada Fase 1, seluruh notifikasi disalurkan melalui kanal berbasis web (in-app, dashboard, email, browser notification) karena belum tersedia aplikasi mobile native.
+Push notification ke perangkat mobile (native) akan tersedia pada Fase 2 seiring pengembangan Mobile App.  [ROADMAP FASE 2]
+16. Modul Panic Button
+Fitur keselamatan bagi petugas keamanan di lapangan. Pada Fase 1, Panic Button tersedia dalam versi Web.
+Fase 1 — Web
+Tombol darurat tersedia di halaman utama Web App Patrol selama sesi aplikasi aktif di browser.
+Saat ditekan, sistem mengirimkan lokasi GPS terkini (via Geolocation API browser) & identitas guard secara real-time ke server.
+Notifikasi diterima instan oleh Team Leader, Supervisor, dan Manager melalui dashboard, email, dan browser notification.
+Tersedia log riwayat panic button untuk keperluan audit dan evaluasi.
+17. Modul Incident Report
+Security dapat membuat laporan apabila menemukan:
+Kebakaran
+Kebocoran
+Orang Mencurigakan
+Kerusakan
+Kecelakaan
+Lainnya
+Field
+Judul
+Kategori
+Deskripsi
+Foto
+Video
+Lokasi
+Tingkat Prioritas
+Lifecycle Status
+New — laporan baru dibuat oleh security
+In Review — sedang ditinjau oleh Supervisor
+Approved / Rejected — keputusan Supervisor disertai catatan
+Follow-up Required — memerlukan tindak lanjut lebih lanjut
+Closed — selesai ditangani
+Incident kategori kritis (kebakaran, kecelakaan) memicu notifikasi eskalasi otomatis ke Manager tanpa menunggu approval Supervisor.
+18. Dashboard Monitoring
+Realtime — Menampilkan:
+Patrol Berjalan
+Security Aktif
+Checkpoint Terlewati
+Checkpoint Terlewat
+Lokasi Security
+Status Patrol
+Antrian Incident Menunggu Approval
+Status Sinkronisasi Data per Guard (Online/Offline, jumlah data dalam antrian)  [v1.4]
+Status server & konektivitas jaringan lokal
+19. Report
+Laporan Harian
+Nama Security
+Shift
+Area
+Total Checkpoint
+Selesai
+Terlewat
+Durasi
+Laporan Bulanan
+Total Patrol
+Total Incident
+Patrol Compliance
+Ranking Security
+Spesifikasi Ekspor
+Format: PDF dan Excel.
+PDF: layout siap cetak dengan header perusahaan, ringkasan, dan tabel detail per checkpoint.
+Excel: data mentah per baris (raw data) untuk keperluan analisis lanjutan.
+Laporan dapat dijadwalkan otomatis (harian/bulanan) dikirim ke email internal Supervisor/Manager.
+20. Non-Functional Requirement
+20.1 Performance
+Response < 3 detik pada jaringan lokal
+Support 500 user aktif
+20.2 Security
+JWT Authentication dengan refresh token
+HTTPS internal (self-signed/internal CA) untuk trafik dalam jaringan lokal
+Password Hashing
+Role Based Access Control (RBAC)
+Server-time based timestamp untuk seluruh pencatatan aktivitas
+Akses sistem dibatasi hanya dari dalam jaringan internal perusahaan
+20.3 Availability
+Uptime 99% pada jam operasional
+Karena single server on-premise, perlu prosedur monitoring kesehatan server (health check) oleh Admin/IT internal.
+20.4 Compatibility
+Browser: Chrome, Edge, Firefox (desktop untuk Dashboard)
+Browser mobile: Chrome/Safari Android & iOS (untuk Web App Patrol, dengan dukungan akses kamera & GPS)
+20.5 Data Privacy & Kepatuhan
+Kepatuhan terhadap UU Perlindungan Data Pribadi (UU PDP) terkait data lokasi (GPS) karyawan, meski data tidak keluar dari jaringan internal perusahaan.
+Persetujuan (consent) karyawan atas pelacakan lokasi selama jam kerja/shift.
+Kebijakan retensi data lokasi & foto (mis. disimpan maksimal 90 hari, dapat dikonfigurasi).
+Data pribadi hanya dapat diakses oleh role yang berwenang dan dari dalam jaringan internal.
+20.6 Audit Trail
+Mencatat setiap perubahan pada data master (User, Area, Checkpoint, Jadwal): siapa, kapan, perubahan apa.
+Log audit tidak dapat dihapus atau diubah oleh user biasa (append-only).
+Tersedia fitur pencarian & filter log audit untuk keperluan investigasi/audit internal.
+20.7 File Storage
+Foto & video incident disimpan pada storage lokal server / NAS internal perusahaan (bukan cloud storage).
+Kompresi otomatis untuk foto/video sebelum disimpan guna menghemat kapasitas disk server.
+Kebijakan retensi media & kapasitas disk perlu direncanakan sejak awal (estimasi pertumbuhan data per bulan).
+Direkomendasikan backup storage terpisah dari server utama (mis. NAS kedua) untuk redundansi.
+20.8 API Design
+API menggunakan versioning (mis. /api/v1/...) untuk mendukung perubahan ke depan tanpa breaking existing client, termasuk saat Mobile App Fase 2 dikembangkan.
+Rate limiting untuk mencegah penyalahgunaan meski dalam jaringan internal.
+Dokumentasi API (mis. OpenAPI/Swagger) disiapkan agar Mobile App Fase 2 dapat mengonsumsi API yang sama tanpa perubahan besar.
+20.9 Backup & Disaster Recovery
+Backup database Mysql terjadwal (harian) dengan retensi minimal 30 hari, disimpan di media terpisah dari server utama.
+Prosedur restore teruji secara berkala — penting karena tidak ada redundansi otomatis seperti pada layanan cloud.
+Recovery Time Objective (RTO) dan Recovery Point Objective (RPO) didefinisikan sesuai kebutuhan operasional perusahaan.
+Dipertimbangkan penyediaan server cadangan (standby) untuk meminimalkan downtime jika server utama bermasalah.
+20.10 Infrastruktur Jaringan Lokal
+Diperlukan survei & pemetaan cakupan WiFi di seluruh titik checkpoint sebelum go-live, khususnya area basement/ruang panel/parkiran.
+Direkomendasikan segmentasi jaringan (VLAN) khusus untuk perangkat Guard Tour demi keamanan & stabilitas.
+Server memerlukan IP/hostname internal tetap agar mudah diakses seluruh perangkat di jaringan kantor.
+Akses remote (dari luar kantor) tidak didukung di Fase 1; jika dibutuhkan, direkomendasikan menggunakan VPN internal sebagai pengembangan lanjutan.
+21. Database
+21.1 Teknologi Database
+DBMS: MySQL. 
+Dipilih karena: bersifat open-source (tanpa biaya lisensi, sesuai model deployment on-premise), mendukung relasi data yang kompleks (user, jadwal, patrol log, incident), serta memiliki performa yang stabil untuk menangani beban transaksi menengah (±500 pengguna aktif). 
+Koneksi API Backend menggunakan driver MySQL yang terintegrasi dengan framework Laravel untuk mengelola koneksi database secara efisien. 
+Backup dilakukan menggunakan utilitas bawaan MySQL (mysqldump) untuk pencadangan data secara berkala sehingga mendukung proses pemulihan data apabila terjadi kegagalan sistem.
+21.2 Struktur Data (High Level)
+KPI
+Patrol Compliance ≥ 95%
+Checkpoint Missed < 5%
+Incident Response < 10 menit
+Report otomatis 100%
+Scan berhasil ≥ 99%
+Waktu respons panic button < 1 menit
+Sinkronisasi data offline berhasil ≥ 99% tanpa duplikasi  [v1.4]
+Ketersediaan jaringan lokal (WiFi uptime) di area checkpoint ≥ 99%  [v1.2]
+23. Future Enhancement (Roadmap Fase 2 dan Selanjutnya)
+Fase 2 — Mobile App Native
+Mobile App Android (native) untuk Security
+Offline-first penuh dengan local database & auto-sync
+Scan NFC
+Panic Button versi native (berjalan di background, tombol fisik, SMS fallback)
+Push notification native ke perangkat mobile
+Fase 3+ — Pengembangan Lanjutan
+QR Code dinamis (opsional, peningkatan keamanan)
+Akses remote via VPN internal
+Face Recognition
+AI Detection
+Integrasi CCTV
+Integrasi Attendance
+Analitik dan prediksi area berisiko
+Live Tracking lanjutan & Geofencing dinamis
+WhatsApp Notification
+Migrasi opsional ke cloud/hybrid apabila kebutuhan multi-lokasi/multi-cabang berkembang
+24. Ringkasan Fitur (MVP Fase 1 — Web, On-Premise)
+

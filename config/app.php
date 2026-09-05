@@ -65,7 +65,20 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Jakarta'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Skip GPS Validation (Development)
+    |--------------------------------------------------------------------------
+    |
+    | Saat true, validasi jarak/radius GPS dan langkah ambil lokasi di alur
+    | scan patroli dilewati (lat/long dicatat sebagai 0). Digunakan sementara
+    | untuk tahap development — set false / hapus DEV_SKIP_GPS saat produksi.
+    |
+    */
+
+    'skip_gps_validation' => env('DEV_SKIP_GPS', false),
 
     /*
     |--------------------------------------------------------------------------

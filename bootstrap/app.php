@@ -11,7 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'restrict.guard' => \App\Http\Middleware\RestrictGuardToMemberArea::class,
+        ]);
+
+        // Trust all proxies (needed for ngrok / reverse proxy)
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

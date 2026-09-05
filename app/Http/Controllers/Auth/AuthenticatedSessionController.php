@@ -28,6 +28,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Redirect berdasarkan role:
+        // - Security Guard → member.dashboard (hanya akses area member)
+        // - Admin / Supervisor → Command Center dashboard
+        $user = Auth::user();
+        $user->load('role');
+
+        if ($user->role && $user->role->role_name === 'Security Guard') {
+            return redirect()->route('member.dashboard');
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
