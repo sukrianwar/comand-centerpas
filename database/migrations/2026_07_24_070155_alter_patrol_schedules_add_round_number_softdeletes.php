@@ -24,7 +24,11 @@ return new class extends Migration
         //
         // Catatan: Data existing dengan shift='siang' harus di-handle terlebih dahulu
         // (di production, sebaiknya migrate data 'siang' ke 'pagi' atau 'malam' sebelum jalankan ini).
-        DB::statement("ALTER TABLE patrol_schedules MODIFY COLUMN `shift` ENUM('pagi', 'malam') NOT NULL");
+        // Hanya berlaku untuk MySQL. SQLite (dipakai testing) menyimpan enum
+        // sebagai varchar dan tidak mendukung sintaks MODIFY COLUMN.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE patrol_schedules MODIFY COLUMN `shift` ENUM('pagi', 'malam') NOT NULL");
+        }
 
         // Langkah 2 & 3: Tambah kolom round_number dan deleted_at
         Schema::table('patrol_schedules', function (Blueprint $table) {
@@ -46,7 +50,9 @@ return new class extends Migration
             $table->dropSoftDeletes();
         });
 
-        // Kembalikan enum ke 3 nilai semula
-        DB::statement("ALTER TABLE patrol_schedules MODIFY COLUMN `shift` ENUM('pagi', 'siang', 'malam') NOT NULL");
+        // Kembalikan enum ke 3 nilai semula (hanya MySQL)
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE patrol_schedules MODIFY COLUMN `shift` ENUM('pagi', 'siang', 'malam') NOT NULL");
+        }
     }
 };

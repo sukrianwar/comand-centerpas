@@ -17,19 +17,44 @@ class StorePatrolScheduleRequest extends FormRequest
         return [
             'schedule_name' => ['required', 'string', 'max:150'],
 
-            'area_id'  => ['required', Rule::exists('areas', 'id')->whereNull('deleted_at')],
+            'area_id' => ['required', Rule::exists('areas', 'id')->whereNull('deleted_at')],
 
-            'shift'        => ['required', Rule::in(['pagi', 'malam'])],
+            'shift' => ['required', Rule::in(['pagi', 'malam'])],
             'round_number' => ['required', 'integer', 'min:1', 'max:3'],
 
-            'start_time'  => ['required', 'date_format:H:i'],
-            'end_time'    => ['required', 'date_format:H:i', 'after:start_time'],
+            'start_time' => ['required', 'date_format:H:i'],
+            'end_time' => [
+                'required',
+                'date_format:H:i',
+                function ($attribute, $value, $fail) {
+                    $start = $this->input('start_time');
+
+                    if ($start === null || $start === '') {
+                        return; // ditangani oleh rule start_time
+                    }
+
+                    if ($start === $value) {
+                        $fail('Jam selesai tidak boleh sama dengan jam mulai.');
+
+                        return;
+                    }
+
+                    // Shift malam boleh melewati tengah malam (end_time < start_time).
+                    if ($this->input('shift') === 'malam') {
+                        return;
+                    }
+
+                    if ($value < $start) {
+                        $fail('Jam selesai harus lebih lambat dari jam mulai.');
+                    }
+                },
+            ],
 
             'interval' => ['nullable', 'integer', 'min:1'],
 
             'status' => ['required', Rule::in(['scheduled', 'ongoing', 'completed', 'missed'])],
 
-            'checkpoints'   => ['required', 'array', 'min:1'],
+            'checkpoints' => ['required', 'array', 'min:1'],
             'checkpoints.*' => [
                 'integer',
                 Rule::exists('checkpoints', 'id')->whereNull('deleted_at')->where('status', 'active'),
@@ -41,19 +66,17 @@ class StorePatrolScheduleRequest extends FormRequest
     {
         return [
             'round_number.required' => 'Urutan putaran patroli (ke-1, ke-2, atau ke-3) wajib diisi.',
-            'round_number.integer'  => 'Urutan putaran harus berupa angka.',
-            'round_number.min'      => 'Urutan putaran minimal adalah 1.',
-            'round_number.max'      => 'Urutan putaran maksimal adalah 3.',
+            'round_number.integer' => 'Urutan putaran harus berupa angka.',
+            'round_number.min' => 'Urutan putaran minimal adalah 1.',
+            'round_number.max' => 'Urutan putaran maksimal adalah 3.',
 
-            'end_time.after'        => 'Jam selesai harus lebih lambat dari jam mulai.',
+            'checkpoints.required' => 'Minimal satu checkpoint harus dipilih untuk rute patroli ini.',
+            'checkpoints.min' => 'Minimal satu checkpoint harus dipilih untuk rute patroli ini.',
+            'checkpoints.*.exists' => 'Salah satu checkpoint yang dipilih tidak valid atau sudah tidak aktif.',
 
-            'checkpoints.required'  => 'Minimal satu checkpoint harus dipilih untuk rute patroli ini.',
-            'checkpoints.min'       => 'Minimal satu checkpoint harus dipilih untuk rute patroli ini.',
-            'checkpoints.*.exists'  => 'Salah satu checkpoint yang dipilih tidak valid atau sudah tidak aktif.',
-
-            'area_id.exists'        => 'Area yang dipilih tidak valid.',
-            'shift.in'              => 'Shift harus berupa Pagi atau Malam.',
-            'status.in'             => 'Status jadwal tidak valid.',
+            'area_id.exists' => 'Area yang dipilih tidak valid.',
+            'shift.in' => 'Shift harus berupa Pagi atau Malam.',
+            'status.in' => 'Status jadwal tidak valid.',
         ];
     }
 

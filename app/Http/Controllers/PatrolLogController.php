@@ -26,8 +26,8 @@ class PatrolLogController extends Controller
         // Jadwal patroli bersifat global (berlaku setiap hari, tanpa petugas
         // dan tanggal tertentu). Ambil semua jadwal yang sedang aktif.
         $activeSchedules = PatrolSchedule::with(['checkpoints' => function ($q) {
-                $q->orderByPivot('sequence_number', 'asc');
-            }, 'area'])
+            $q->orderByPivot('sequence_number', 'asc');
+        }, 'area'])
             ->activeNow()
             ->orderBy('start_time')
             ->get();
@@ -65,15 +65,15 @@ class PatrolLogController extends Controller
 
         // 1. Ambil Checkpoint dan PatrolSchedule
         $checkpoint = Checkpoint::findOrFail($request->checkpoint_id);
-        $schedule   = PatrolSchedule::with('checkpoints')->findOrFail($request->patrol_schedule_id);
+        $schedule = PatrolSchedule::with('checkpoints')->findOrFail($request->patrol_schedule_id);
 
         // 2. Pastikan jadwal masih dalam periode aktif (global, berlaku harian).
         //    Jadwal yang statusnya bukan scheduled/ongoing atau di luar jam
         //    aktifnya tidak boleh di-scan.
-        $now         = Carbon::now();
+        $now = Carbon::now();
         $scheduleDate = $now->toDateString();
-        $startTime   = Carbon::createFromFormat('Y-m-d H:i:s', $scheduleDate . ' ' . $schedule->start_time);
-        $endTime     = Carbon::createFromFormat('Y-m-d H:i:s', $scheduleDate . ' ' . $schedule->end_time);
+        $startTime = Carbon::createFromFormat('Y-m-d H:i:s', $scheduleDate.' '.$schedule->start_time);
+        $endTime = Carbon::createFromFormat('Y-m-d H:i:s', $scheduleDate.' '.$schedule->end_time);
 
         // Tangani kasus shift malam yang melewati tengah malam (end < start)
         if ($endTime->lessThanOrEqualTo($startTime)) {
@@ -119,14 +119,14 @@ class PatrolLogController extends Controller
         // 4. Tolak jika di luar radius checkpoint
         if (! $skipGps && $distanceMeters > $checkpoint->radius) {
             return response()->json([
-                'success'  => false,
-                'message'  => sprintf(
+                'success' => false,
+                'message' => sprintf(
                     'Anda berada di luar jangkauan checkpoint ini (jarak: %.0f meter, maksimal %d meter).',
                     $distanceMeters,
                     $checkpoint->radius
                 ),
                 'distance' => round($distanceMeters),
-                'radius'   => $checkpoint->radius,
+                'radius' => $checkpoint->radius,
             ], 422);
         }
 
@@ -134,10 +134,10 @@ class PatrolLogController extends Controller
         //    di jadwal yang sama HARI INI (progress scan per petugas per hari,
         //    jadwal dipakai bersama dan berlaku harian)
         $alreadyScanned = PatrolLog::where('patrol_schedule_id', $schedule->id)
-                                   ->where('user_id', $user->id)
-                                   ->where('checkpoint_id', $checkpoint->id)
-                                   ->whereDate('scanned_at', $now->toDateString())
-                                   ->exists();
+            ->where('user_id', $user->id)
+            ->where('checkpoint_id', $checkpoint->id)
+            ->whereDate('scanned_at', $now->toDateString())
+            ->exists();
         if ($alreadyScanned) {
             return response()->json([
                 'success' => false,
@@ -148,48 +148,51 @@ class PatrolLogController extends Controller
         // 6. Simpan foto ke storage/app/public/patrol-photos/
         $photoPath = $request->file('photo')->store('patrol-photos', 'public');
 
-        // 7. Tentukan status on_time / late
-        //    Bandingkan waktu scan dengan start_time + end_time pada hari ini.
-        //    Jadwal 'ongoing' (dinyalakan manual di luar jam) dianggap on_time.
-        $status = ($inWindow || $schedule->status === 'ongoing') ? 'on_time' : 'late';
+        // 7. Status scan. Scan hanya lolos bila jadwal 'ongoing' (selalu aktif)
+        //    atau 'scheduled' yang masih di dalam window jam aktifnya (lihat
+        //    langkah 2). Karena scan di luar window sudah ditolak, semua scan
+        //    yang tersimpan di sini selalu tepat waktu ('on_time').
+        //    Nilai enum 'late' disediakan untuk kebutuhan sistem lain (mis. impor
+        //    data historis) dan tidak dipakai oleh alur scan saat ini.
+        $status = 'on_time';
 
         // 8. Simpan PatrolLog
         $log = PatrolLog::create([
             'patrol_schedule_id' => $schedule->id,
-            'checkpoint_id'      => $checkpoint->id,
-            'user_id'            => $user->id,
-            'scanned_at'         => $now,
-            'latitude'           => $request->latitude ?? 0,
-            'longitude'          => $request->longitude ?? 0,
-            'distance_meters'    => $distanceMeters,
-            'photo_path'         => $photoPath,
-            'status'             => $status,
-            'notes'              => $request->notes,
+            'checkpoint_id' => $checkpoint->id,
+            'user_id' => $user->id,
+            'scanned_at' => $now,
+            'latitude' => $request->latitude ?? 0,
+            'longitude' => $request->longitude ?? 0,
+            'distance_meters' => $distanceMeters,
+            'photo_path' => $photoPath,
+            'status' => $status,
+            'notes' => $request->notes,
         ]);
 
         // 9. Hitung progress terkini: berapa checkpoint sudah discan hari ini
         //    oleh petugas ini di jadwal ini
-        $totalCheckpoints  = count($checkpointIds);
-        $scannedLogs       = PatrolLog::where('patrol_schedule_id', $schedule->id)
-                                      ->where('user_id', $user->id)
-                                      ->whereDate('scanned_at', $now->toDateString())
-                                      ->pluck('checkpoint_id');
-        $scannedCount      = $scannedLogs->count();
-        $scannedIds        = $scannedLogs->toArray();
-        $isComplete        = $scannedCount >= $totalCheckpoints;
+        $totalCheckpoints = count($checkpointIds);
+        $scannedLogs = PatrolLog::where('patrol_schedule_id', $schedule->id)
+            ->where('user_id', $user->id)
+            ->whereDate('scanned_at', $now->toDateString())
+            ->pluck('checkpoint_id');
+        $scannedCount = $scannedLogs->count();
+        $scannedIds = $scannedLogs->toArray();
+        $isComplete = $scannedCount >= $totalCheckpoints;
 
         return response()->json([
-            'success'          => true,
-            'message'          => $isComplete
+            'success' => true,
+            'message' => $isComplete
                 ? 'Patroli selesai! Semua checkpoint sudah discan.'
                 : "Checkpoint berhasil discan! ({$scannedCount}/{$totalCheckpoints})",
-            'status'           => $status,
-            'distance'         => round($distanceMeters),
-            'scanned_count'    => $scannedCount,
-            'total_checkpoints'=> $totalCheckpoints,
-            'scanned_ids'      => $scannedIds,
-            'is_complete'      => $isComplete,
-            'photo_url'        => Storage::disk('public')->url($photoPath),
+            'status' => $status,
+            'distance' => round($distanceMeters),
+            'scanned_count' => $scannedCount,
+            'total_checkpoints' => $totalCheckpoints,
+            'scanned_ids' => $scannedIds,
+            'is_complete' => $isComplete,
+            'photo_url' => Storage::disk('public')->url($photoPath),
         ]);
     }
 
@@ -202,8 +205,8 @@ class PatrolLogController extends Controller
         $userId = auth()->id();
 
         $query = PatrolLog::with(['checkpoint', 'patrolSchedule.area'])
-                          ->where('user_id', $userId)
-                          ->orderBy('scanned_at', 'desc');
+            ->where('user_id', $userId)
+            ->orderBy('scanned_at', 'desc');
 
         // Filter tanggal dari
         if ($request->filled('date_from')) {

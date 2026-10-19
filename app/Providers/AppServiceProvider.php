@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Safety net: validasi GPS tidak boleh dilewati di produksi,
+        // apa pun nilai DEV_SKIP_GPS di .env.
+        if ($this->app->isProduction()) {
+            config(['app.skip_gps_validation' => false]);
+        }
     }
 }

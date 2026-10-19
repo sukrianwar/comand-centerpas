@@ -17,30 +17,38 @@ class MemberDashboardController extends Controller
     public function index(Request $request): View
     {
         $user = auth()->user();
-        $now  = Carbon::now();
+        $now = Carbon::now();
         $today = $now->toDateString();
 
         // ── Sapaan dinamis berdasarkan jam ───────────────────────────────────
         $hour = (int) $now->format('H');
         $greeting = match (true) {
-            $hour >= 5 && $hour < 11  => 'Selamat Pagi 👋',
+            $hour >= 5 && $hour < 11 => 'Selamat Pagi 👋',
             $hour >= 11 && $hour < 15 => 'Selamat Siang 👋',
             $hour >= 15 && $hour < 18 => 'Selamat Sore 👋',
-            default                   => 'Selamat Malam 👋',
+            default => 'Selamat Malam 👋',
         };
 
         // ── Jadwal aktif sekarang (global, berlaku harian) ───────────────────
         $activeSchedules = PatrolSchedule::with(['checkpoints' => function ($q) {
-                $q->orderByPivot('sequence_number', 'asc');
-            }, 'area'])
+            $q->orderByPivot('sequence_number', 'asc');
+        }, 'area'])
             ->activeNow()
             ->orderBy('start_time')
             ->get();
 
-        // Progress scan per jadwal, dihitung per petugas yang login
-        $activeSchedules->each(function ($schedule) use ($user) {
-            $schedule->scannedCheckpointIds = PatrolLog::where('patrol_schedule_id', $schedule->id)
-                ->where('user_id', $user->id)
+        // Progress scan per jadwal, dihitung per petugas yang login HARI INI
+        // (jadwal berlaku harian — scan kemarin tidak dihitung ulang). Satu
+        // query untuk semua jadwal aktif agar tidak terjadi N+1.
+        $scannedPerSchedule = PatrolLog::where('user_id', $user->id)
+            ->whereDate('scanned_at', $today)
+            ->whereIn('patrol_schedule_id', $activeSchedules->pluck('id'))
+            ->get(['patrol_schedule_id', 'checkpoint_id'])
+            ->groupBy('patrol_schedule_id');
+
+        $activeSchedules->each(function ($schedule) use ($scannedPerSchedule) {
+            $schedule->scannedCheckpointIds = $scannedPerSchedule
+                ->get($schedule->id, collect())
                 ->pluck('checkpoint_id')
                 ->toArray();
         });
@@ -48,13 +56,13 @@ class MemberDashboardController extends Controller
         // ── Statistik hari ini (berbasis jadwal aktif) ───────────────────────
         $totalCheckpointsActive = $activeSchedules->sum(fn ($s) => $s->checkpoints->count());
         $cpSelesai = PatrolLog::where('user_id', $user->id)
-                              ->whereDate('scanned_at', $today)
-                              ->count();
+            ->whereDate('scanned_at', $today)
+            ->count();
 
         $stats = [
             'jadwal_total' => $activeSchedules->count(),
-            'cp_selesai'   => $cpSelesai,
-            'cp_terlewat'  => max($totalCheckpointsActive - $cpSelesai, 0),
+            'cp_selesai' => $cpSelesai,
+            'cp_terlewat' => max($totalCheckpointsActive - $cpSelesai, 0),
         ];
 
         // ── Jadwal mendatang (belum masuk jam, urut waktu mulai) ──────────────

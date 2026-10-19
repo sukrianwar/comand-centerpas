@@ -18,26 +18,41 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $indexes = collect(DB::select('SHOW INDEX FROM patrol_logs'))->pluck('Key_name');
+        if (DB::getDriverName() === 'mysql') {
+            $indexes = collect(DB::select('SHOW INDEX FROM patrol_logs'))->pluck('Key_name');
 
-        foreach (['patrol_logs_schedule_checkpoint_user_unique', 'patrol_logs_schedule_checkpoint_unique'] as $name) {
-            if ($indexes->contains($name)) {
-                Schema::table('patrol_logs', fn (Blueprint $table) => $table->dropUnique($name));
+            foreach (['patrol_logs_schedule_checkpoint_user_unique', 'patrol_logs_schedule_checkpoint_unique'] as $name) {
+                if ($indexes->contains($name)) {
+                    Schema::table('patrol_logs', fn (Blueprint $table) => $table->dropUnique($name));
+                }
             }
+
+            return;
+        }
+
+        // SQLite / driver lain: drop unique langsung, abaikan bila tidak ada.
+        try {
+            Schema::table('patrol_logs', fn (Blueprint $table) => $table->dropUnique('patrol_logs_schedule_checkpoint_unique'));
+        } catch (Throwable $e) {
+            // index tidak ada — tidak ada yang perlu dilakukan
         }
     }
 
     public function down(): void
     {
-        $indexes = collect(DB::select('SHOW INDEX FROM patrol_logs'))->pluck('Key_name');
+        if (DB::getDriverName() === 'mysql') {
+            $indexes = collect(DB::select('SHOW INDEX FROM patrol_logs'))->pluck('Key_name');
 
-        if (! $indexes->contains('patrol_logs_schedule_checkpoint_unique')) {
-            Schema::table('patrol_logs', function (Blueprint $table) {
-                $table->unique(
-                    ['patrol_schedule_id', 'checkpoint_id'],
-                    'patrol_logs_schedule_checkpoint_unique'
-                );
-            });
+            if ($indexes->contains('patrol_logs_schedule_checkpoint_unique')) {
+                return;
+            }
         }
+
+        Schema::table('patrol_logs', function (Blueprint $table) {
+            $table->unique(
+                ['patrol_schedule_id', 'checkpoint_id'],
+                'patrol_logs_schedule_checkpoint_unique'
+            );
+        });
     }
 };

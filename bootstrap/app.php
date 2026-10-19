@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RestrictGuardToMemberArea;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,11 +13,17 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'restrict.guard' => \App\Http\Middleware\RestrictGuardToMemberArea::class,
+            'restrict.guard' => RestrictGuardToMemberArea::class,
         ]);
 
-        // Trust all proxies (needed for ngrok / reverse proxy)
-        $middleware->trustProxies(at: '*');
+        // Proxy tepercaya diambil dari env TRUSTED_PROXIES (dipisah koma).
+        // Kosong = tidak mempercayai proxy mana pun (aman untuk produksi).
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TRUSTED_PROXIES', ''))
+        )));
+
+        $middleware->trustProxies(at: $trustedProxies ?: null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
