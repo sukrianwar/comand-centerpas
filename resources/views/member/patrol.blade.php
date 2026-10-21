@@ -3,7 +3,7 @@
 {{-- ══ Header ══════════════════════════════════════════════════════════════ --}}
 <div class="mb-lg border-b border-outline-variant pb-md">
     <h2 class="text-headline-md font-bold text-on-surface mb-1">Patroli</h2>
-    <p class="text-body-lg text-secondary">Pilih jadwal aktif, lalu scan QR checkpoint untuk mencatat kehadiran patroli Anda.</p>
+    <p class="text-body-lg text-secondary">Pilih jadwal aktif, lalu pilih checkpoint untuk mencatat kehadiran patroli Anda.</p>
 </div>
 
 @if($activeSchedules->isNotEmpty())
@@ -11,8 +11,8 @@
      ADA JADWAL AKTIF — Petugas memilih jadwal, lalu alur scan berjalan
      ══════════════════════════════════════════════════════════════════════════ --}}
 
-{{-- Alpine.js state management untuk seluruh alur scan --}}
-<div x-data="patrolScan()" x-init="init()">
+{{-- Alpine.js state management untuk seluruh alur patroli --}}
+<div x-data="patrolScan()">
 
     {{-- ── STEP 0: Pilih Jadwal (daftar semua jadwal aktif) ─────────────── --}}
     <template x-if="currentSchedule === null">
@@ -57,7 +57,7 @@
         </div>
     </template>
 
-    {{-- ── Jadwal Terpilih — Info + Scanner ─────────────────────────────── --}}
+    {{-- ── Jadwal Terpilih — Info + Checkpoint ──────────────────────────── --}}
     <template x-if="currentSchedule !== null">
         <div>
 
@@ -110,10 +110,13 @@
                 </h3>
                 <div class="space-y-sm">
                     <template x-for="(cp, idx) in currentSchedule.checkpoints" :key="cp.id">
-                        <div class="flex items-center gap-md p-sm rounded-xl border transition-all"
-                             :class="scannedIds.includes(cp.id)
-                                 ? 'bg-emerald-50 border-emerald-200'
-                                 : 'bg-surface-container-lowest border-outline-variant'">
+                        <button type="button"
+                                @click="selectCheckpoint(cp)"
+                                :disabled="scannedIds.includes(cp.id)"
+                                class="w-full text-left flex items-center gap-md p-sm rounded-xl border transition-all"
+                                :class="scannedIds.includes(cp.id)
+                                    ? 'bg-emerald-50 border-emerald-200 cursor-default opacity-90'
+                                    : 'bg-surface-container-lowest border-outline-variant hover:border-primary hover:bg-primary/5 active:scale-[0.99] cursor-pointer'">
                             {{-- Nomor Urut / Checkmark --}}
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-body-sm font-bold transition-all"
                                  :class="scannedIds.includes(cp.id)
@@ -132,75 +135,50 @@
                                    :class="scannedIds.includes(cp.id) ? 'line-through opacity-60' : ''">
                                     <span x-text="cp.name"></span>
                                 </p>
-                                <p class="text-label-md text-secondary truncate" x-text="cp.qr_code"></p>
+                                <p class="text-label-md truncate"
+                                   :class="scannedIds.includes(cp.id) ? 'text-emerald-700' : 'text-secondary'"
+                                   x-text="scannedIds.includes(cp.id) ? 'Sudah dicatat' : 'Ketuk untuk mencatat kehadiran'"></p>
                             </div>
-                            {{-- Status Badge --}}
+                            {{-- Status / Aksi --}}
                             <template x-if="scannedIds.includes(cp.id)">
                                 <span class="text-label-sm font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full flex-shrink-0">Selesai</span>
                             </template>
-                        </div>
+                            <template x-if="!scannedIds.includes(cp.id)">
+                                <span class="material-symbols-outlined text-primary flex-shrink-0">chevron_right</span>
+                            </template>
+                        </button>
                     </template>
                 </div>
             </div>
 
-            {{-- ══ AREA SCAN — Multi-step flow ══════════════════════════════ --}}
+            {{-- ══ AREA CHECKPOINT — Alur pilih → foto ═════════════════════ --}}
             <div class="bg-surface border border-outline-variant rounded-3xl p-lg shadow-sm">
 
-                {{-- ── STEP 0: Tombol Mulai Scan (state awal) ──────────── --}}
+                {{-- ── STEP 0: Petunjuk pilih checkpoint (state awal) ──── --}}
                 <template x-if="step === 'idle'">
                     <div class="text-center py-lg">
                         <div class="w-24 h-24 mx-auto mb-lg bg-primary-container rounded-3xl flex items-center justify-center">
-                            <span class="material-symbols-outlined text-primary text-[48px]">qr_code_scanner</span>
+                            <span class="material-symbols-outlined text-primary text-[48px]">checklist</span>
                         </div>
-                        <h3 class="text-headline-md font-bold text-on-surface mb-2">Scan QR Checkpoint</h3>
-                        <p class="text-body-md text-secondary mb-xl max-w-md mx-auto">Arahkan kamera ke QR Code checkpoint untuk mencatat kehadiran.</p>
-
                         <template x-if="isComplete">
-                            <div class="inline-flex items-center gap-sm px-lg py-md bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-bold text-title-md">
-                                <span class="material-symbols-outlined text-[28px]">celebration</span>
-                                Semua checkpoint sudah discan!
+                            <div>
+                                <h3 class="text-headline-md font-bold text-emerald-800 mb-2">Semua checkpoint sudah dicatat!</h3>
+                                <div class="inline-flex items-center gap-sm px-lg py-md bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-bold text-title-md">
+                                    <span class="material-symbols-outlined text-[28px]">celebration</span>
+                                    Patroli rute ini selesai
+                                </div>
                             </div>
                         </template>
                         <template x-if="!isComplete">
-                            <button @click="startScanner()"
-                                    class="w-full max-w-md mx-auto bg-primary text-on-primary py-lg px-xl rounded-2xl font-bold text-title-lg flex items-center justify-center gap-md transition-all hover:bg-surface-tint hover:shadow-lg active:scale-[0.98]">
-                                <span class="material-symbols-outlined text-[28px]">photo_camera</span>
-                                Buka Kamera Scanner
-                            </button>
+                            <div>
+                                <h3 class="text-headline-md font-bold text-on-surface mb-2">Pilih Checkpoint</h3>
+                                <p class="text-body-md text-secondary max-w-md mx-auto">Ketuk salah satu checkpoint yang belum dicatat pada daftar di atas untuk mulai mencatat kehadiran.</p>
+                            </div>
                         </template>
                     </div>
                 </template>
 
-                {{-- ── STEP 1: QR Scanner aktif ────────────────────────── --}}
-                <template x-if="step === 'scanning'">
-                    <div>
-                        <div class="flex items-center justify-between mb-md">
-                            <h3 class="text-title-lg font-bold text-on-surface flex items-center gap-sm">
-                                <span class="material-symbols-outlined text-primary">qr_code_scanner</span>
-                                Arahkan ke QR Code
-                            </h3>
-                            <button @click="stopScanner()" class="p-xs text-secondary hover:bg-surface-container rounded-full transition-colors">
-                                <span class="material-symbols-outlined">close</span>
-                            </button>
-                        </div>
-                        <div id="qr-reader" class="rounded-2xl overflow-hidden border-2 border-primary/30 mb-md"></div>
-                        <p class="text-body-sm text-secondary text-center">Pastikan QR Code terlihat jelas di area scan.</p>
-                    </div>
-                </template>
-
-                {{-- ── STEP 2: GPS loading ─────────────────────────────── --}}
-                <template x-if="step === 'gps'">
-                    <div class="text-center py-xl">
-                        <div class="w-20 h-20 mx-auto mb-lg bg-blue-50 rounded-3xl flex items-center justify-center animate-pulse">
-                            <span class="material-symbols-outlined text-blue-600 text-[40px]">my_location</span>
-                        </div>
-                        <h3 class="text-title-lg font-bold text-on-surface mb-2">Mengambil Lokasi GPS...</h3>
-                        <p class="text-body-md text-secondary mb-md">Pastikan GPS aktif di perangkat Anda.</p>
-                        <p class="text-label-md text-secondary">Checkpoint: <span class="font-bold text-on-surface" x-text="matchedCheckpointName"></span></p>
-                    </div>
-                </template>
-
-                {{-- ── STEP 3: Ambil Foto ──────────────────────────────── --}}
+                {{-- ── STEP 1: Ambil Foto ──────────────────────────────── --}}
                 <template x-if="step === 'photo'">
                     <div class="text-center py-lg">
                         <div class="w-16 h-16 mx-auto mb-md bg-amber-50 rounded-2xl flex items-center justify-center">
@@ -234,7 +212,7 @@
                                     <template x-if="!isSubmitting">
                                         <span class="material-symbols-outlined text-[24px]">send</span>
                                     </template>
-                                    <span x-text="isSubmitting ? 'Mengirim...' : 'Kirim Scan'"></span>
+                                    <span x-text="isSubmitting ? 'Mengirim...' : 'Simpan Kehadiran'"></span>
                                 </button>
                                 <button @click="resetToIdle()"
                                         :disabled="isSubmitting"
@@ -246,7 +224,7 @@
                     </div>
                 </template>
 
-                {{-- ── STEP 4: Sukses ──────────────────────────────────── --}}
+                {{-- ── STEP 2: Sukses ──────────────────────────────────── --}}
                 <template x-if="step === 'success'">
                     <div class="text-center py-xl">
                         <div class="w-24 h-24 mx-auto mb-lg bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
@@ -259,12 +237,11 @@
                                 <span class="material-symbols-outlined text-[16px]" x-text="resultStatus === 'on_time' ? 'schedule' : 'warning'"></span>
                                 <span x-text="resultStatus === 'on_time' ? 'Tepat Waktu' : 'Terlambat'"></span>
                             </span>
-                            <span>Jarak: <span x-text="resultDistance"></span> m</span>
                         </div>
                         <button @click="resetToIdle()"
                                 class="bg-primary text-on-primary py-md px-xl rounded-2xl font-bold text-body-lg transition-all hover:shadow-lg active:scale-[0.98]">
-                            <span class="material-symbols-outlined text-[20px] align-middle mr-1">qr_code_scanner</span>
-                            Scan Checkpoint Berikutnya
+                            <span class="material-symbols-outlined text-[20px] align-middle mr-1">checklist</span>
+                            Pilih Checkpoint Berikutnya
                         </button>
                     </div>
                 </template>
@@ -319,7 +296,7 @@
 @include('member.partials.jadwal-hari-ini')
 @endif
 
-{{-- ══ JavaScript — Pilih Jadwal & Alur Scan Checkpoint ════════════════════ --}}
+{{-- ══ JavaScript — Pilih Jadwal & Pencatatan Checkpoint ══════════════════ --}}
 @if($activeSchedules->isNotEmpty())
 @php
     $schedulesData = $activeSchedules->map(function ($schedule) {
@@ -332,7 +309,6 @@
             'checkpoints' => $schedule->checkpoints->map(fn ($cp) => [
                 'id'      => $cp->id,
                 'name'    => $cp->checkpoint_name,
-                'qr_code' => $cp->qr_code,
             ])->values()->all(),
             'scanned_ids' => $schedule->scannedCheckpointIds,
         ];
@@ -344,41 +320,27 @@ document.addEventListener('alpine:init', () => {
         // ── State ──────────────────────────────────────────────────────────
         schedules: @json($schedulesData),
         currentSchedule: null,  // jadwal yang dipilih petugas (objek dari schedules)
-        step: 'idle',           // idle → scanning → gps → photo → success
+        step: 'idle',           // idle → photo → success
         errorMessage: '',
         isSubmitting: false,
         isSessionExpired: false,
 
-        // ── Data scan saat ini ─────────────────────────────────────────────
+        // ── Data pencatatan saat ini ───────────────────────────────────────
         scannedIds: [],
         matchedCheckpointId: null,
         matchedCheckpointName: '',
-        gpsLatitude: null,
-        gpsLongitude: null,
         photoFile: null,
         photoPreview: null,
 
         // ── Hasil ──────────────────────────────────────────────────────────
         resultMessage: '',
         resultStatus: '',
-        resultDistance: 0,
-
-        // ── QR Scanner instance ────────────────────────────────────────────
-        scanner: null,
-
-        // ── Tahap development: lewati langkah GPS ──────────────────────────
-        skipGps: @json(config('app.skip_gps_validation', false)),
 
         // ── Computed ───────────────────────────────────────────────────────
         get totalCheckpoints() { return this.currentSchedule ? this.currentSchedule.checkpoints.length : 0; },
         get scannedCount() { return this.scannedIds.length; },
         get progressPercent() { return this.totalCheckpoints > 0 ? Math.round((this.scannedIds.length / this.totalCheckpoints) * 100) : 0; },
         get isComplete() { return this.totalCheckpoints > 0 && this.scannedIds.length >= this.totalCheckpoints; },
-
-        init() {
-            // Cleanup scanner saat navigasi
-            window.addEventListener('beforeunload', () => this.stopScanner());
-        },
 
         // ═══ STEP PICK: Petugas memilih jadwal aktif ══════════════════════
         selectSchedule(id) {
@@ -391,125 +353,30 @@ document.addEventListener('alpine:init', () => {
         },
 
         changeSchedule() {
-            this.stopScanner();
             this.currentSchedule = null;
             this.scannedIds = [];
             this.step = 'idle';
             this.errorMessage = '';
         },
 
-        // ═══ STEP 1: Buka QR Scanner ══════════════════════════════════════
-        async startScanner() {
-            this.step = 'scanning';
+        // ═══ STEP 1: Petugas memilih checkpoint ═══════════════════════════
+        selectCheckpoint(cp) {
+            // Abaikan jika checkpoint sudah dicatat
+            if (this.scannedIds.includes(cp.id)) {
+                return;
+            }
+
             this.errorMessage = '';
+            this.matchedCheckpointId = cp.id;
+            this.matchedCheckpointName = cp.name;
 
-            await this.$nextTick();
-
-            const readerEl = document.getElementById('qr-reader');
-            if (!readerEl) return;
-
-            try {
-                this.scanner = new window.Html5Qrcode('qr-reader');
-
-                await this.scanner.start(
-                    { facingMode: 'environment' },
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0,
-                    },
-                    (decodedText) => this.onQrScanned(decodedText),
-                    () => {} // ignore errors (frame tanpa QR)
-                );
-            } catch (err) {
-                this.errorMessage = 'Tidak dapat mengakses kamera. Pastikan izin kamera diaktifkan dan coba lagi.';
-                this.step = 'idle';
-            }
+            // Langsung ke langkah foto
+            this.step = 'photo';
+            this.photoFile = null;
+            this.photoPreview = null;
         },
 
-        async stopScanner() {
-            if (this.scanner) {
-                try {
-                    await this.scanner.stop();
-                } catch (e) { /* ignore */ }
-                this.scanner = null;
-            }
-            if (this.step === 'scanning') {
-                this.step = 'idle';
-            }
-        },
-
-        // ═══ STEP 2: QR Terbaca — validasi checkpoint ════════════════════
-        async onQrScanned(qrCode) {
-            // Stop scanner dulu supaya tidak scan berulang
-            await this.stopScanner();
-
-            // Cocokkan QR code dengan daftar checkpoint di rute yang dipilih
-            const matched = this.currentSchedule.checkpoints.find(cp => cp.qr_code === qrCode);
-
-            if (!matched) {
-                this.errorMessage = `Checkpoint dengan kode "${qrCode}" bukan bagian dari rute ini.`;
-                return;
-            }
-
-            // Cek apakah sudah discan
-            if (this.scannedIds.includes(matched.id)) {
-                this.errorMessage = `Checkpoint "${matched.name}" sudah discan sebelumnya.`;
-                return;
-            }
-
-            // Valid — simpan info dan lanjut ke foto
-            this.matchedCheckpointId = matched.id;
-            this.matchedCheckpointName = matched.name;
-
-            // Tahap development: lewati permintaan GPS, langsung ke foto
-            if (this.skipGps) {
-                this.gpsLatitude = 0;
-                this.gpsLongitude = 0;
-                this.step = 'photo';
-                this.photoFile = null;
-                this.photoPreview = null;
-                return;
-            }
-
-            this.requestGps();
-        },
-
-        // ═══ STEP 3: Minta GPS ═══════════════════════════════════════════
-        requestGps() {
-            this.step = 'gps';
-            this.errorMessage = '';
-
-            if (!navigator.geolocation) {
-                this.errorMessage = 'Browser Anda tidak mendukung GPS. Gunakan browser Chrome/Safari terbaru.';
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    this.gpsLatitude = pos.coords.latitude;
-                    this.gpsLongitude = pos.coords.longitude;
-                    // Lanjut ke step foto
-                    this.step = 'photo';
-                    this.photoFile = null;
-                    this.photoPreview = null;
-                },
-                (err) => {
-                    let msg = 'Gagal mendapatkan lokasi GPS.';
-                    if (err.code === 1) msg = 'Izin lokasi ditolak. Aktifkan GPS dan izinkan akses lokasi di pengaturan browser, lalu coba lagi.';
-                    if (err.code === 2) msg = 'Lokasi tidak tersedia. Pastikan GPS perangkat aktif.';
-                    if (err.code === 3) msg = 'Waktu permintaan lokasi habis. Pastikan GPS aktif dan coba lagi.';
-                    this.errorMessage = msg;
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 0,
-                }
-            );
-        },
-
-        // ═══ STEP 4: Foto dipilih ════════════════════════════════════════
+        // ═══ STEP 2: Foto dipilih ════════════════════════════════════════
         onPhotoSelected(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -522,7 +389,7 @@ document.addEventListener('alpine:init', () => {
             reader.readAsDataURL(file);
         },
 
-        // ═══ STEP 5: Submit ke server ════════════════════════════════════
+        // ═══ STEP 3: Submit ke server ════════════════════════════════════
         async submitScan() {
             if (this.isSubmitting) return;
             this.isSubmitting = true;
@@ -532,8 +399,6 @@ document.addEventListener('alpine:init', () => {
             const formData = new FormData();
             formData.append('patrol_schedule_id', this.currentSchedule.id);
             formData.append('checkpoint_id', this.matchedCheckpointId);
-            formData.append('latitude', this.gpsLatitude);
-            formData.append('longitude', this.gpsLongitude);
             formData.append('photo', this.photoFile);
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -576,14 +441,13 @@ document.addEventListener('alpine:init', () => {
                 if (!res.ok || !data.success) {
                     this.errorMessage = data.message || 'Terjadi kesalahan saat mengirim data.';
                     this.isSubmitting = false;
-                    // Jika ditolak karena aturan radius/duplikat, biarkan user tetap di step foto.
+                    // Jika ditolak karena duplikat, biarkan user tetap di step foto.
                     return;
                 }
 
                 // ── Sukses ──
                 this.resultMessage = data.message;
                 this.resultStatus = data.status;
-                this.resultDistance = data.distance;
 
                 // Update UI progress tanpa reload
                 this.scannedIds = data.scanned_ids;
@@ -603,8 +467,6 @@ document.addEventListener('alpine:init', () => {
             this.errorMessage = '';
             this.matchedCheckpointId = null;
             this.matchedCheckpointName = '';
-            this.gpsLatitude = null;
-            this.gpsLongitude = null;
             this.photoFile = null;
             this.photoPreview = null;
             this.resultMessage = '';

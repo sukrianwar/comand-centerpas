@@ -17,17 +17,15 @@ class PatrolSchedule extends Model
     protected $fillable = [
         'schedule_name',
         'area_id',
-        'shift',
+        'shift_id',
         'round_number',
         'start_time',
         'end_time',
-        'interval',
         'status',
     ];
 
     protected $casts = [
         'round_number' => 'integer',
-        'interval' => 'integer',
     ];
 
     // ─── Relasi ──────────────────────────────────────────────────────────────
@@ -38,6 +36,14 @@ class PatrolSchedule extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class, 'area_id');
+    }
+
+    /**
+     * Master shift yang dipakai jadwal ini.
+     */
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
     }
 
     /**
@@ -55,18 +61,6 @@ class PatrolSchedule extends Model
         ->withPivot('sequence_number')
         ->orderByPivot('sequence_number', 'asc')
         ->withTimestamps();
-    }
-
-    // ─── Scopes Shift ────────────────────────────────────────────────────────
-
-    public function scopePagi($query)
-    {
-        return $query->where('shift', 'pagi');
-    }
-
-    public function scopeMalam($query)
-    {
-        return $query->where('shift', 'malam');
     }
 
     // ─── Scope Jadwal Aktif ───────────────────────────────────────────────────

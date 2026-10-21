@@ -32,7 +32,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md mb-xl">
 
     <!-- Stat 1: Total Rute -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-md flex flex-col justify-between hover:shadow-md hover:border-outline transition-all">
+    <div class="soft-card soft-card-hover p-md flex flex-col justify-between">
         <div class="flex justify-between items-start mb-md">
             <p class="text-body-sm font-body-sm text-secondary">Total Rute</p>
             <div class="bg-surface-container p-xs rounded-full">
@@ -46,7 +46,7 @@
     </div>
 
     <!-- Stat 2: Selesai Tepat Waktu -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-md flex flex-col justify-between hover:shadow-md hover:border-emerald-300 transition-all">
+    <div class="soft-card soft-card-hover p-md flex flex-col justify-between">
         <div class="flex justify-between items-start mb-md">
             <p class="text-body-sm font-body-sm text-secondary">Selesai Tepat Waktu</p>
             <div class="bg-emerald-50 p-xs rounded-full">
@@ -60,7 +60,7 @@
     </div>
 
     <!-- Stat 3: Titik Terlewat -->
-    <div class="bg-surface-container-lowest border border-outline-variant border-l-4 border-l-amber-400 rounded-2xl p-md flex flex-col justify-between hover:shadow-md transition-all">
+    <div class="soft-card soft-card-hover border-l-4 border-l-amber-400 p-md flex flex-col justify-between">
         <div class="flex justify-between items-start mb-md">
             <p class="text-body-sm font-body-sm text-secondary">Titik Terlewat</p>
             <div class="bg-amber-50 p-xs rounded-full">
@@ -98,7 +98,7 @@
     <div class="lg:col-span-2 flex flex-col gap-md">
 
         <!-- Log Patroli Real-time -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl overflow-hidden flex flex-col">
+        <div class="soft-card overflow-hidden flex flex-col">
             <div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
                 <div>
                     <h3 class="text-headline-md font-headline-md text-on-surface flex items-center gap-sm">
@@ -158,7 +158,7 @@
         </div>
 
         <!-- Denah Area Patroli -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl overflow-hidden flex flex-col">
+        <div class="soft-card overflow-hidden flex flex-col">
             <div class="p-md border-b border-outline-variant bg-surface-container-low">
                 <h3 class="text-headline-md font-headline-md text-on-surface">Denah Area Patroli</h3>
                 <p class="text-body-sm font-body-sm text-secondary">Visualisasi posisi petugas dan titik checkpoint secara real-time</p>

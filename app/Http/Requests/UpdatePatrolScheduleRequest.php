@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\Shift;
 
 class UpdatePatrolScheduleRequest extends FormRequest
 {
@@ -15,11 +16,9 @@ class UpdatePatrolScheduleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'schedule_name' => ['required', 'string', 'max:150'],
-
             'area_id' => ['required', Rule::exists('areas', 'id')->whereNull('deleted_at')],
 
-            'shift' => ['required', Rule::in(['pagi', 'malam'])],
+            'shift_id' => ['required', Rule::exists('shifts', 'id')->whereNull('deleted_at')],
             'round_number' => ['required', 'integer', 'min:1', 'max:3'],
 
             'start_time' => ['required', 'date_format:H:i'],
@@ -39,8 +38,9 @@ class UpdatePatrolScheduleRequest extends FormRequest
                         return;
                     }
 
-                    // Shift malam boleh melewati tengah malam (end_time < start_time).
-                    if ($this->input('shift') === 'malam') {
+                    // Shift yang melewati tengah malam boleh memakai end_time < start_time.
+                    $shift = Shift::find($this->input('shift_id'));
+                    if ($shift && $shift->start_time > $shift->end_time) {
                         return;
                     }
 
@@ -49,8 +49,6 @@ class UpdatePatrolScheduleRequest extends FormRequest
                     }
                 },
             ],
-
-            'interval' => ['nullable', 'integer', 'min:1'],
 
             'status' => ['required', Rule::in(['scheduled', 'ongoing', 'completed', 'missed'])],
 
@@ -75,7 +73,8 @@ class UpdatePatrolScheduleRequest extends FormRequest
             'checkpoints.*.exists' => 'Salah satu checkpoint yang dipilih tidak valid atau sudah tidak aktif.',
 
             'area_id.exists' => 'Area yang dipilih tidak valid.',
-            'shift.in' => 'Shift harus berupa Pagi atau Malam.',
+            'shift_id.required' => 'Shift wajib dipilih.',
+            'shift_id.exists' => 'Shift yang dipilih tidak valid.',
             'status.in' => 'Status jadwal tidak valid.',
         ];
     }

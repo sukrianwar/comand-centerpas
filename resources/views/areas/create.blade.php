@@ -16,7 +16,7 @@
 <form method="POST" action="{{ route('areas.store') }}">
     @csrf
 
-    <div class="max-w-2xl bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+    <div class="max-w-2xl soft-card p-lg">
         
         <div class="space-y-md">
             

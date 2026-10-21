@@ -74,7 +74,7 @@
 
                 <div class="flex flex-col sm:flex-row gap-md">
                     <a href="{{ route('member.patrol') }}" class="flex-1 bg-white text-primary hover:bg-surface-container-lowest py-lg rounded-2xl font-bold text-title-lg flex items-center justify-center gap-sm transition-all shadow-lg hover:shadow-xl active:scale-[0.98]">
-                        <span class="material-symbols-outlined text-[32px]">qr_code_scanner</span> Lanjutkan Patroli
+                        <span class="material-symbols-outlined text-[32px]">directions_walk</span> Lanjutkan Patroli
                     </a>
                     @if($activeSchedules->count() > 1)
                     <a href="{{ route('member.patrol') }}" class="bg-white/15 hover:bg-white/25 text-white py-lg px-xl rounded-2xl font-bold text-title-lg flex items-center justify-center gap-sm transition-all border border-white/20 active:scale-[0.98]">
@@ -97,7 +97,7 @@
                 <h3 class="text-headline-md font-bold text-on-surface mb-2">Belum Ada Patroli Aktif</h3>
                 <p class="text-body-lg text-secondary max-w-md mx-auto mb-lg">Saat ini tidak ada jadwal yang sedang berjalan. Halaman patroli akan menampilkan jadwal aktif secara otomatis saat masuk jam patroli.</p>
                 <a href="{{ route('member.patrol') }}" class="inline-flex items-center gap-sm bg-primary text-on-primary py-md px-xl rounded-2xl font-bold text-title-md transition-all hover:bg-surface-tint hover:shadow-lg active:scale-[0.98]">
-                    <span class="material-symbols-outlined text-[24px]">qr_code_scanner</span> Buka Halaman Patroli
+                    <span class="material-symbols-outlined text-[24px]">directions_walk</span> Buka Halaman Patroli
                 </a>
             </div>
         </div>
@@ -134,15 +134,15 @@
         <div class="bg-surface border border-outline-variant rounded-3xl p-lg shadow-sm">
             <h3 class="text-title-lg font-bold text-on-surface mb-lg">Statistik Hari Ini</h3>
             <div class="grid grid-cols-2 gap-md">
-                <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-md text-center hover:shadow-md transition-shadow">
+                <div class="soft-card soft-card-hover p-md text-center">
                     <p class="text-headline-md md:text-display font-bold text-primary mb-1">{{ $stats['jadwal_total'] }}</p>
                     <p class="text-body-md text-secondary font-medium">Jadwal Aktif</p>
                 </div>
-                <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-md text-center hover:shadow-md transition-shadow">
+                <div class="soft-card soft-card-hover p-md text-center">
                     <p class="text-headline-md md:text-display font-bold text-emerald-600 mb-1">{{ $stats['cp_selesai'] }}</p>
                     <p class="text-body-md text-secondary font-medium">CP Selesai</p>
                 </div>
-                <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-md text-center hover:shadow-md transition-shadow">
+                <div class="soft-card soft-card-hover p-md text-center">
                     <p class="text-headline-md md:text-display font-bold text-amber-600 mb-1">{{ $stats['cp_terlewat'] }}</p>
                     <p class="text-body-md text-secondary font-medium">CP Belum Discan</p>
                 </div>

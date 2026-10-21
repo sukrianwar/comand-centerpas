@@ -14,11 +14,11 @@
             
             <div class="relative z-10">
                 <div class="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary-container rounded-full border-4 border-surface shadow-xl flex items-center justify-center text-on-primary font-bold text-[48px] tracking-wider mb-lg">
-                    AR
+                    {{ strtoupper(substr($user->name, 0, 2)) }}
                 </div>
                 
-                <h3 class="text-headline-md md:text-display font-bold text-on-surface mb-1">Ahmad Riyadi</h3>
-                <p class="text-title-md text-primary font-medium mb-lg">Security Guard</p>
+                <h3 class="text-headline-md md:text-display font-bold text-on-surface mb-1">{{ $user->name }}</h3>
+                <p class="text-title-md text-primary font-medium mb-lg">{{ $user->role?->role_name ?? 'Petugas' }}</p>
                 
                 <div class="space-y-md text-left bg-surface-container-lowest p-md rounded-2xl border border-outline-variant">
                     <div class="flex items-center gap-md">
@@ -26,8 +26,8 @@
                             <span class="material-symbols-outlined">badge</span>
                         </div>
                         <div>
-                            <p class="text-label-md text-secondary">ID Karyawan (NIK)</p>
-                            <p class="text-body-lg font-bold text-on-surface">202601001</p>
+                            <p class="text-label-md text-secondary">Username</p>
+                            <p class="text-body-lg font-bold text-on-surface">{{ $user->username }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-md">
@@ -36,7 +36,7 @@
                         </div>
                         <div class="min-w-0">
                             <p class="text-label-md text-secondary">Email</p>
-                            <p class="text-body-lg font-bold text-on-surface truncate">ahmad.r@sentinel.com</p>
+                            <p class="text-body-lg font-bold text-on-surface truncate">{{ $user->email ?? '—' }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-md">
@@ -45,7 +45,7 @@
                         </div>
                         <div>
                             <p class="text-label-md text-secondary">Bergabung Sejak</p>
-                            <p class="text-body-lg font-bold text-on-surface">15 Jan 2024</p>
+                            <p class="text-body-lg font-bold text-on-surface">{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</p>
                         </div>
                     </div>
                 </div>

@@ -13,17 +13,22 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         Role::updateOrCreate(
-            ['role_name' => 'Admin'], 
+            ['role_name' => 'Super Admin'],
+            ['description' => 'Akses tertinggi — dapat melihat dan mengelola seluruh data sistem']
+        );
+
+        Role::updateOrCreate(
+            ['role_name' => 'Admin'],
             ['description' => 'Akses penuh ke seluruh sistem']
         );
-        
+
         Role::updateOrCreate(
-            ['role_name' => 'Supervisor'], 
+            ['role_name' => 'Supervisor'],
             ['description' => 'Mengelola jadwal, area, dan checkpoint patroli']
         );
-        
+
         Role::updateOrCreate(
-            ['role_name' => 'Security Guard'], 
+            ['role_name' => 'Security Guard'],
             ['description' => 'Menjalankan patroli sesuai jadwal yang ditugaskan']
         );
     }

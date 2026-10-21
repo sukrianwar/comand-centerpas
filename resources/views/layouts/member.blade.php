@@ -11,7 +11,6 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
         h1, h2, h3, h4, h5, h6, .font-headline-lg, .font-display, .font-headline-md { font-family: 'Hanken Grotesk', sans-serif; }
-        .font-label-md { font-family: 'JetBrains Mono', monospace; }
         
         .material-symbols-outlined {
             font-family: 'Material Symbols Outlined';
@@ -106,7 +105,7 @@
              @click="sidebarOpen = false" x-cloak></div>
 
         <!-- 1. Elemen Kiri: Sidebar -->
-        <aside class="app-sidebar bg-surface border-r border-outline-variant flex flex-col shadow-2xl"
+        <aside class="app-sidebar bg-surface/95 backdrop-blur-md border-r border-outline-variant/70 flex flex-col shadow-2xl"
                :class="{ 'sidebar-open': sidebarOpen }" x-cloak>
             
             <!-- Sidebar Header -->
@@ -160,7 +159,7 @@
         <div class="app-main bg-background">
             
             <!-- Top Header Bar -->
-            <header class="sticky top-0 z-30 bg-surface/90 backdrop-blur-md border-b border-outline-variant shadow-sm h-16 flex items-center justify-between px-md lg:px-lg flex-shrink-0">
+            <header class="sticky top-0 z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant/70 shadow-soft h-16 flex items-center justify-between px-md lg:px-lg flex-shrink-0">
                 <div class="flex items-center gap-sm">
                     <!-- Hamburger Menu Button (Mobile) -->
                     <button @click="sidebarOpen = true" class="mobile-toggle p-xs text-on-surface-variant hover:bg-surface-container rounded-full transition-colors mr-2">
@@ -193,14 +192,14 @@
                         <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-surface"></span>
                     </button>
                     
-                    <a href="{{ route('member.profile') }}" class="w-10 h-10 rounded-full bg-primary-container border-2 border-primary flex items-center justify-center text-on-primary-container font-bold text-title-md cursor-pointer hover:shadow-lg transition-all">
-                        AR
+                    <a href="{{ route('member.profile') }}" title="{{ auth()->user()?->name }}" class="w-10 h-10 rounded-full bg-primary-container border-2 border-primary flex items-center justify-center text-on-primary-container font-bold text-title-md cursor-pointer hover:shadow-lg transition-all">
+                        {{ strtoupper(substr(auth()->user()?->name ?? 'U', 0, 2)) }}
                     </a>
                 </div>
             </header>
 
             <!-- Main Scrollable Content Area -->
-            <main class="flex-1 overflow-y-auto bg-surface-container-lowest">
+            <main class="flex-1 overflow-y-auto bg-transparent">
                 <div class="w-full p-md lg:p-lg lg:py-xl">
 
                     {{-- ── Flash: Error (mis. redirect dari middleware restrict.guard) ──────── --}}

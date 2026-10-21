@@ -32,7 +32,7 @@ class MemberDashboardController extends Controller
         // ── Jadwal aktif sekarang (global, berlaku harian) ───────────────────
         $activeSchedules = PatrolSchedule::with(['checkpoints' => function ($q) {
             $q->orderByPivot('sequence_number', 'asc');
-        }, 'area'])
+        }, 'area', 'shift'])
             ->activeNow()
             ->orderBy('start_time')
             ->get();
@@ -80,7 +80,7 @@ class MemberDashboardController extends Controller
             $currentBadge = sprintf(
                 '%s • Shift %s (%s–%s)',
                 $user->role?->role_name ?? 'Petugas',
-                ucfirst($first->shift),
+                $first->shift?->shift_name ?? '-',
                 Carbon::parse($first->start_time)->format('H:i'),
                 Carbon::parse($first->end_time)->format('H:i')
             );

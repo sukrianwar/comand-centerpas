@@ -8,6 +8,7 @@ use App\Http\Controllers\MemberDashboardController;
 use App\Http\Controllers\PatrolLogController;
 use App\Http\Controllers\PatrolScheduleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,20 +22,16 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
 
     // Dashboard utama
     Route::get('/dashboard', [DashboardController::class, 'index'])
-         ->name('dashboard');
+        ->name('dashboard');
 
     // Incidents
     Route::get('/incidents', [IncidentController::class, 'index'])
-         ->name('incidents.index');
+        ->name('incidents.index');
 
-    // Guards & Shifts (placeholder views)
+    // Guards (placeholder view)
     Route::get('/guards', function () {
         return view('guards.index');
     })->name('guards.index');
-
-    Route::get('/shifts', function () {
-        return view('shifts.index');
-    })->name('shifts.index');
 
     Route::get('/settings', function () {
         return view('settings.index');
@@ -43,19 +40,20 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
     // ── Resource routes Command Center ──────────────────────────────────────
     Route::resource('patrol-schedules', PatrolScheduleController::class);
     Route::resource('areas', AreaController::class);
+    Route::resource('areas.checkpoints', CheckpointController::class)
+        ->scoped()
+        ->except(['index', 'show']);
 
-    // QR Code checkpoint: gambar & halaman cetak massal
-    Route::get('checkpoints/{checkpoint}/qr', [CheckpointController::class, 'showQr'])
-         ->name('checkpoints.qr');
-    Route::get('checkpoints/qr/print', [CheckpointController::class, 'printQr'])
-         ->name('checkpoints.qr.print');
-    Route::resource('checkpoints', CheckpointController::class);
+    // Shift: CRUD + toggle status
+    Route::patch('shifts/{shift}/toggle-status', [ShiftController::class, 'toggleStatus'])
+        ->name('shifts.toggle-status');
+    Route::resource('shifts', ShiftController::class);
 
     // Petugas (Users)
     Route::patch('petugas/{petuga}/toggle-status', [UserController::class, 'toggleStatus'])
-         ->name('petugas.toggle-status');
+        ->name('petugas.toggle-status');
     Route::resource('petugas', UserController::class)
-         ->parameters(['petugas' => 'petuga']);
+        ->parameters(['petugas' => 'petuga']);
 });
 
 // ══ Member Area — semua role yang sudah login boleh masuk ════════════════════
@@ -64,23 +62,23 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
 Route::middleware(['auth', 'restrict.guard'])->group(function () {
     // ── Halaman Beranda member (dashboard data-driven) ──────────────────────
     Route::get('/member', [MemberDashboardController::class, 'index'])
-         ->name('member.dashboard');
+        ->name('member.dashboard');
 
     // ── Halaman Patroli (scan checkpoint) ───────────────────────────────────
     Route::get('/member/patrol', [PatrolLogController::class, 'patrol'])
-         ->name('member.patrol');
+        ->name('member.patrol');
 
     // Endpoint scan checkpoint — dipanggil via AJAX/fetch dari frontend
     Route::post('/member/patrol/scan', [PatrolLogController::class, 'store'])
-         ->name('member.patrol.scan');
+        ->name('member.patrol.scan');
 
     // ── Riwayat scan ────────────────────────────────────────────────────────
     Route::get('/member/riwayat', [PatrolLogController::class, 'index'])
-         ->name('member.riwayat');
+        ->name('member.riwayat');
 
     // ── Profil ──────────────────────────────────────────────────────────────
     Route::get('/member/profile', function () {
-        return view('member.profile');
+        return view('member.profile', ['user' => auth()->user()->loadMissing('role')]);
     })->name('member.profile');
 });
 
@@ -92,4 +90,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
-

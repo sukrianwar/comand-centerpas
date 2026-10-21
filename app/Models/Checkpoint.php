@@ -16,19 +16,9 @@ class Checkpoint extends Model
     protected $fillable = [
         'area_id',
         'checkpoint_name',
-        'qr_code',
-        'latitude',
-        'longitude',
-        'radius',
         'photo',
         'status',
         'description',
-    ];
-
-    protected $casts = [
-        'latitude'  => 'decimal:7',
-        'longitude' => 'decimal:7',
-        'radius'    => 'integer',
     ];
 
     // ─── Relasi ──────────────────────────────────────────────────────────────
@@ -55,27 +45,5 @@ class Checkpoint extends Model
         ->withPivot('sequence_number')
         ->orderByPivot('sequence_number', 'asc')
         ->withTimestamps();
-    }
-
-    /**
-     * Generate unique QR code dengan retry logic.
-     */
-    public static function generateUniqueQrCode(): string
-    {
-        $maxRetries = 5;
-        $attempt = 0;
-
-        while ($attempt < $maxRetries) {
-            $qrCode = 'CP-' . strtoupper(\Illuminate\Support\Str::random(8));
-            
-            // Gunakan exists() agar lebih cepat
-            if (!self::where('qr_code', $qrCode)->exists()) {
-                return $qrCode;
-            }
-
-            $attempt++;
-        }
-
-        throw new \Exception('Gagal men-generate QR Code unik setelah ' . $maxRetries . ' percobaan.');
     }
 }

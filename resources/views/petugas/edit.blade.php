@@ -17,7 +17,7 @@
     @csrf
     @method('PUT')
 
-    <div class="max-w-3xl bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+    <div class="max-w-3xl soft-card p-lg">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-md">
             

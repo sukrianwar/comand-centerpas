@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePatrolScheduleRequest;
 use App\Models\Area;
 use App\Models\Checkpoint;
 use App\Models\PatrolSchedule;
+use App\Models\Shift;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,7 +22,7 @@ class PatrolScheduleController extends Controller
     {
         Gate::authorize('viewAny', PatrolSchedule::class);
 
-        $query = PatrolSchedule::with(['area', 'checkpoints'])
+        $query = PatrolSchedule::with(['area', 'shift', 'checkpoints'])
             ->orderBy('created_at', 'desc')
             ->orderBy('start_time', 'asc');
 
@@ -31,8 +32,8 @@ class PatrolScheduleController extends Controller
         }
 
         // ── Filter berdasarkan shift ─────────────────────────────────────────
-        if ($request->filled('shift') && in_array($request->shift, ['pagi', 'malam'])) {
-            $query->where('shift', $request->shift);
+        if ($request->filled('shift_id')) {
+            $query->where('shift_id', $request->shift_id);
         }
 
         // ── Filter berdasarkan status ────────────────────────────────────────
@@ -55,14 +56,16 @@ class PatrolScheduleController extends Controller
         // ── Statistik card (query terpisah agar tidak terpengaruh filter) ───
         $stats = [
             'total'  => PatrolSchedule::count(),
-            'pagi'   => PatrolSchedule::where('shift', 'pagi')->count(),
-            'malam'  => PatrolSchedule::where('shift', 'malam')->count(),
         ];
+        $shiftStats = Shift::withCount('patrolSchedules')
+            ->orderBy('start_time')
+            ->get();
 
-        // ── Data untuk dropdown filter area ─────────────────────────────────
+        // ── Data untuk dropdown filter area & shift ─────────────────────────
         $areas = Area::orderBy('area_name')->get(['id', 'area_name']);
+        $shifts = Shift::orderBy('start_time')->get(['id', 'shift_name', 'start_time', 'end_time', 'status']);
 
-        return view('patrol-schedules.index', compact('schedules', 'stats', 'areas'));
+        return view('patrol-schedules.index', compact('schedules', 'stats', 'shiftStats', 'areas', 'shifts'));
     }
 
     /**
@@ -77,8 +80,11 @@ class PatrolScheduleController extends Controller
                                  ->with('area:id,area_name')
                                  ->orderBy('checkpoint_name')
                                  ->get(['id', 'checkpoint_name', 'area_id']);
+        $shifts      = Shift::active()
+                                 ->orderBy('start_time')
+                                 ->get(['id', 'shift_name', 'start_time', 'end_time']);
 
-        return view('patrol-schedules.create', compact('areas', 'checkpoints'));
+        return view('patrol-schedules.create', compact('areas', 'checkpoints', 'shifts'));
     }
 
     /**
@@ -88,7 +94,14 @@ class PatrolScheduleController extends Controller
     {
         Gate::authorize('create', PatrolSchedule::class);
 
-        $schedule = PatrolSchedule::create($request->safe()->except('checkpoints'));
+        $data = $request->safe()->except('checkpoints');
+        $data['schedule_name'] = $this->buildScheduleName(
+            $data['area_id'],
+            $data['shift_id'],
+            $data['round_number']
+        );
+
+        $schedule = PatrolSchedule::create($data);
 
         // Sync relasi checkpoints ke pivot dengan sequence_number berurutan
         $checkpointSync = [];
@@ -127,6 +140,15 @@ class PatrolScheduleController extends Controller
                                  ->orderBy('checkpoint_name')
                                  ->get(['id', 'checkpoint_name', 'area_id']);
 
+        // Tampilkan shift aktif + shift yang sedang dipakai jadwal ini
+        // (agar jadwal lama yang shift-nya nonaktif tetap bisa disimpan).
+        $shifts = Shift::where(function ($q) use ($patrolSchedule) {
+            $q->where('status', 'active')
+              ->orWhere('id', $patrolSchedule->shift_id);
+        })
+            ->orderBy('start_time')
+            ->get(['id', 'shift_name', 'start_time', 'end_time', 'status']);
+
         // ID checkpoint yang sudah dipilih (untuk pre-select di form)
         $selectedCheckpoints = $patrolSchedule->checkpoints->pluck('id')->toArray();
 
@@ -134,6 +156,7 @@ class PatrolScheduleController extends Controller
             'patrolSchedule',
             'areas',
             'checkpoints',
+            'shifts',
             'selectedCheckpoints'
         ));
     }
@@ -145,7 +168,14 @@ class PatrolScheduleController extends Controller
     {
         Gate::authorize('update', $patrolSchedule);
 
-        $patrolSchedule->update($request->safe()->except('checkpoints'));
+        $data = $request->safe()->except('checkpoints');
+        $data['schedule_name'] = $this->buildScheduleName(
+            $data['area_id'],
+            $data['shift_id'],
+            $data['round_number']
+        );
+
+        $patrolSchedule->update($data);
 
         // Sync ulang relasi checkpoints dengan sequence_number baru
         $checkpointSync = [];
@@ -172,5 +202,23 @@ class PatrolScheduleController extends Controller
         return redirect()
             ->route('patrol-schedules.index')
             ->with('success', "Jadwal patroli \"{$name}\" berhasil dihapus.");
+    }
+
+    /**
+     * Nama jadwal dibuat otomatis dari area, shift, dan putaran.
+     */
+    private function buildScheduleName(int|string $areaId, int|string $shiftId, int|string $roundNumber): string
+    {
+        $area  = Area::find($areaId);
+        $shift = Shift::find($shiftId);
+
+        $name = sprintf(
+            '%s - Shift %s - Putaran %s',
+            $area?->area_name ?? 'Area',
+            $shift?->shift_name ?? 'Shift',
+            $roundNumber
+        );
+
+        return mb_substr($name, 0, 150);
     }
 }

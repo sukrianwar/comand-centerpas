@@ -56,9 +56,28 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // ── Label shift dinamis berdasarkan jam ──────────────────────────────
-        $hour = (int) now()->format('H');
-        $shiftLabel = ($hour >= 17 || $hour < 5) ? 'Shift Malam sedang berjalan' : 'Shift Pagi sedang berjalan';
+        // ── Label shift dinamis berdasarkan master shift yang sedang berjalan ─
+        $time = now()->format('H:i:s');
+        $currentShift = \App\Models\Shift::active()
+            ->where(function ($q) use ($time) {
+                $q->where(function ($q2) use ($time) {
+                    $q2->whereRaw('start_time <= end_time')
+                       ->whereTime('start_time', '<=', $time)
+                       ->whereTime('end_time', '>=', $time);
+                })->orWhere(function ($q2) use ($time) {
+                    $q2->whereRaw('end_time < start_time')
+                       ->where(function ($q3) use ($time) {
+                           $q3->whereTime('start_time', '<=', $time)
+                              ->orWhereTime('end_time', '>=', $time);
+                       });
+                });
+            })
+            ->orderBy('start_time')
+            ->first();
+
+        $shiftLabel = $currentShift
+            ? "Shift {$currentShift->shift_name} sedang berjalan"
+            : 'Tidak ada shift aktif saat ini';
 
         return view('dashboard', compact(
             'activeGuards',

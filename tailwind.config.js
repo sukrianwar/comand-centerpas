@@ -12,13 +12,13 @@ export default {
     theme: {
         extend: {
             colors: {
-                "background": "#f8f9fb",
+                "background": "#f6f7fb",
                 "secondary": "#575e70",
                 "inverse-primary": "#bdc7d9",
-                "surface-bright": "#f8f9fb",
+                "surface-bright": "#f8f9fc",
                 "surface-dim": "#d9dadc",
                 "surface-container-lowest": "#ffffff",
-                "surface-container-low": "#f3f4f6",
+                "surface-container-low": "#f3f4f7",
                 "on-primary-container": "#8690a1",
                 "primary-container": "#1f2937",
                 "on-surface": "#191c1e",
@@ -33,7 +33,7 @@ export default {
                 "on-primary-fixed": "#121c2a",
                 "on-secondary": "#ffffff",
                 "on-primary-fixed-variant": "#3d4756",
-                "outline-variant": "#c5c6cc",
+                "outline-variant": "#e6e8ef",
                 "secondary-fixed-dim": "#c0c6db",
                 "on-error": "#ffffff",
                 "surface": "#f8f9fb",
@@ -61,10 +61,19 @@ export default {
                 "primary": "#0a1422"
             },
             borderRadius: {
-                "DEFAULT": "0.125rem",
-                "lg": "0.25rem",
-                "xl": "0.5rem",
-                "full": "0.75rem"
+                "sm": "0.25rem",
+                "DEFAULT": "0.375rem",
+                "md": "0.5rem",
+                "lg": "0.75rem",
+                "xl": "1rem",
+                "2xl": "1.25rem",
+                "3xl": "1.5rem",
+                "full": "9999px"
+            },
+            boxShadow: {
+                "soft": "0 1px 2px rgba(16,24,40,0.04), 0 4px 12px rgba(16,24,40,0.05)",
+                "card": "0 1px 3px rgba(16,24,40,0.06), 0 10px 28px -10px rgba(16,24,40,0.12)",
+                "lift": "0 18px 40px -16px rgba(16,24,40,0.22)"
             },
             spacing: {
                 "margin-desktop": "48px",

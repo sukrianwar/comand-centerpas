@@ -19,3 +19,68 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+        background-image:
+            radial-gradient(1100px 520px at 8% -10%, rgba(10, 20, 34, 0.045), transparent 60%),
+            radial-gradient(900px 480px at 100% 0%, rgba(59, 130, 246, 0.05), transparent 55%);
+        background-attachment: fixed;
+    }
+
+    ::selection {
+        background: rgba(10, 20, 34, 0.12);
+    }
+}
+
+@layer components {
+    .soft-card {
+        @apply rounded-2xl border border-outline-variant/70 bg-surface-container-lowest shadow-soft transition-all duration-200;
+    }
+
+    .soft-card-hover:hover {
+        @apply -translate-y-0.5 shadow-card;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-md py-sm text-body-sm font-semibold text-on-primary shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 active:scale-[0.98];
+    }
+
+    .badge-pill {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-label-md font-semibold;
+    }
+
+    .table-modern thead tr {
+        @apply bg-surface-container-low/70;
+    }
+
+    .table-modern tbody tr {
+        @apply transition-colors duration-150;
+    }
+
+    .table-modern tbody tr:hover {
+        @apply bg-surface-container-low/60;
+    }
+}
+
+@keyframes modal-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modal-pop {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-modal-fade {
+    animation: modal-fade 0.18s ease-out;
+}
+
+.animate-modal-pop {
+    animation: modal-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}

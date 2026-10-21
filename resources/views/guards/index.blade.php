@@ -15,7 +15,7 @@
 <!-- Stats Summary Cards -->
 <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-md mb-xl">
     <!-- Total Users -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+    <div class="soft-card soft-card-hover p-md flex flex-col">
         <div class="flex items-center gap-xs mb-sm">
             <span class="material-symbols-outlined text-[18px] text-primary">group</span>
             <p class="text-body-sm font-body-sm text-secondary">Total Pengguna</p>
@@ -23,7 +23,7 @@
         <p class="text-headline-lg font-headline-lg text-on-surface">45</p>
     </div>
     <!-- Security Guard -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+    <div class="soft-card soft-card-hover p-md flex flex-col">
         <div class="flex items-center gap-xs mb-sm">
             <span class="material-symbols-outlined text-[18px] text-secondary">badge</span>
             <p class="text-body-sm font-body-sm text-secondary">Security Guard</p>
@@ -31,7 +31,7 @@
         <p class="text-headline-lg font-headline-lg text-on-surface">32</p>
     </div>
     <!-- Supervisor/Leader -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+    <div class="soft-card soft-card-hover p-md flex flex-col">
         <div class="flex items-center gap-xs mb-sm">
             <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
             <p class="text-body-sm font-body-sm text-secondary">Supervisor / Leader</p>
@@ -39,7 +39,7 @@
         <p class="text-headline-lg font-headline-lg text-on-surface">10</p>
     </div>
     <!-- Akun Aktif -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+    <div class="soft-card soft-card-hover p-md flex flex-col">
         <div class="flex items-center gap-xs mb-sm">
             <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
             <p class="text-body-sm font-body-sm text-secondary">Akun Aktif</p>
@@ -49,7 +49,7 @@
 </div>
 
 <!-- Filter & Search Bar -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md flex flex-col md:flex-row gap-sm items-stretch md:items-center">
+<div class="soft-card soft-card-hover p-md mb-md flex flex-col md:flex-row gap-sm items-stretch md:items-center">
     <!-- Search -->
     <div class="relative flex-1 max-w-md">
         <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
@@ -73,11 +73,11 @@
 </div>
 
 <!-- Users Table -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="soft-card overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="table-modern w-full text-left border-collapse">
             <thead>
-                <tr class="border-b border-outline-variant text-label-md font-label-md text-secondary bg-surface-bright">
+                <tr class="border-b border-outline-variant/60 text-label-md font-label-md text-secondary">
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Profil Petugas / Pengguna</th>
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Peran (Role)</th>
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Akun Login</th>
@@ -131,7 +131,7 @@
                 </tr>
 
                 <!-- Row 2: Supervisor -->
-                <tr class="border-b border-outline-variant bg-[#F9FAFB] hover:bg-surface-container-low transition-colors group">
+                <tr class="border-b border-outline-variant bg-surface-container-low hover:bg-surface-container-low transition-colors group">
                     <td class="py-sm px-md">
                         <div class="flex items-center gap-sm">
                             <div class="w-10 h-10 bg-indigo-100 rounded-full border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-label-md">
@@ -217,7 +217,7 @@
                 </tr>
 
                 <!-- Row 4: Inactive Security -->
-                <tr class="border-b border-outline-variant bg-[#F9FAFB] hover:bg-surface-container-low transition-colors group opacity-60">
+                <tr class="border-b border-outline-variant bg-surface-container-low hover:bg-surface-container-low transition-colors group opacity-60">
                     <td class="py-sm px-md">
                         <div class="flex items-center gap-sm">
                             <div class="w-10 h-10 bg-surface-container-highest rounded-full border border-outline-variant flex items-center justify-center text-on-surface font-bold text-label-md">
@@ -304,7 +304,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-between p-md border-t border-outline-variant bg-[#F9FAFB]">
+    <div class="flex items-center justify-between p-md border-t border-outline-variant bg-surface-container-low">
         <p class="text-body-sm font-body-sm text-secondary">Menampilkan 1-5 dari 45 pengguna</p>
         <div class="flex items-center gap-xs">
             <button class="p-xs px-sm border border-outline-variant rounded-lg text-secondary hover:bg-surface-container transition-colors text-body-sm" disabled>

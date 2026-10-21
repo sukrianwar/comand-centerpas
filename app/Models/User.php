@@ -57,4 +57,36 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
+
+    /**
+     * Cek apakah user memiliki role tertentu.
+     */
+    public function hasRole(string ...$roleNames): bool
+    {
+        return in_array($this->role?->role_name, $roleNames, true);
+    }
+
+    /**
+     * Super Admin memiliki akses tertinggi ke seluruh sistem.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('Super Admin');
+    }
+
+    /**
+     * Role yang boleh mengakses Command Center (semua selain Security Guard).
+     */
+    public function canAccessCommandCenter(): bool
+    {
+        return ! $this->hasRole('Security Guard');
+    }
+
+    /**
+     * Role yang boleh mengelola data master (jadwal, area, checkpoint, petugas).
+     */
+    public function canManageMasterData(): bool
+    {
+        return $this->hasRole('Super Admin', 'Admin', 'Supervisor');
+    }
 }

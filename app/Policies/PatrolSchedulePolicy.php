@@ -28,7 +28,7 @@ class PatrolSchedulePolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role->role_name ?? '', ['Admin', 'Supervisor']);
+        return $user->canManageMasterData();
     }
 
     /**
@@ -36,7 +36,7 @@ class PatrolSchedulePolicy
      */
     public function update(User $user, PatrolSchedule $patrolSchedule): bool
     {
-        return in_array($user->role->role_name ?? '', ['Admin', 'Supervisor']);
+        return $user->canManageMasterData();
     }
 
     /**
@@ -44,7 +44,7 @@ class PatrolSchedulePolicy
      */
     public function delete(User $user, PatrolSchedule $patrolSchedule): bool
     {
-        return in_array($user->role->role_name ?? '', ['Admin', 'Supervisor']);
+        return $user->canManageMasterData();
     }
 
     /**
@@ -52,7 +52,7 @@ class PatrolSchedulePolicy
      */
     public function restore(User $user, PatrolSchedule $patrolSchedule): bool
     {
-        return in_array($user->role->role_name ?? '', ['Admin', 'Supervisor']);
+        return $user->canManageMasterData();
     }
 
     /**
@@ -60,6 +60,6 @@ class PatrolSchedulePolicy
      */
     public function forceDelete(User $user, PatrolSchedule $patrolSchedule): bool
     {
-        return in_array($user->role->role_name ?? '', ['Admin', 'Supervisor']);
+        return $user->canManageMasterData();
     }
 }

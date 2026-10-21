@@ -43,14 +43,21 @@ class AreaController extends Controller
             ->with('success', "Area \"{$area->area_name}\" berhasil ditambahkan.");
     }
 
-    public function show(Area $area): RedirectResponse
+    public function show(Area $area): View
     {
-        return redirect()->route('areas.edit', $area);
+        $area->loadCount(['checkpoints', 'patrolSchedules']);
+
+        $checkpoints = $area->checkpoints()
+            ->withCount('patrolSchedules')
+            ->orderBy('checkpoint_name')
+            ->get();
+
+        return view('areas.show', compact('area', 'checkpoints'));
     }
 
-    public function edit(Area $area): View
+    public function edit(Area $area): RedirectResponse
     {
-        return view('areas.edit', compact('area'));
+        return redirect()->route('areas.show', $area);
     }
 
     public function update(UpdateAreaRequest $request, Area $area): RedirectResponse
@@ -58,7 +65,7 @@ class AreaController extends Controller
         $area->update($request->validated());
 
         return redirect()
-            ->route('areas.index')
+            ->route('areas.show', $area)
             ->with('success', "Area \"{$area->area_name}\" berhasil diperbarui.");
     }
 

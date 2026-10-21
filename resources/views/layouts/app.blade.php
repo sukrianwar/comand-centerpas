@@ -9,7 +9,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
         h1, h2, h3, h4, h5, h6, .font-headline-lg, .font-display, .font-headline-md, .font-headline-lg-mobile { font-family: 'Hanken Grotesk', sans-serif; }
-        .font-label-md { font-family: 'JetBrains Mono', monospace; }
 
         .material-symbols-outlined {
             font-family: 'Material Symbols Outlined';
@@ -70,7 +69,7 @@
 <body class="bg-background text-on-background flex h-screen overflow-hidden">
 
     <!-- ===== SIDEBAR ===== -->
-    <aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 bg-surface border-r border-outline-variant overflow-hidden">
+    <aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 bg-surface/95 backdrop-blur-md border-r border-outline-variant/70 shadow-soft overflow-hidden">
 
         <!-- Brand Header -->
         <div class="sidebar-brand px-md py-lg flex items-center gap-sm flex-shrink-0">
@@ -94,7 +93,9 @@
                 <p class="text-body-sm font-semibold text-on-surface truncate leading-tight">
                     @if(Auth::check()) {{ Auth::user()->name }} @else Admin @endif
                 </p>
-                <p class="text-[11px] text-secondary leading-tight">Supervisor</p>
+                <p class="text-[11px] text-secondary leading-tight">
+                    {{ Auth::check() ? (Auth::user()->role?->role_name ?? 'User') : 'Supervisor' }}
+                </p>
             </div>
             <div class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" title="Online"></div>
         </div>
@@ -142,7 +143,7 @@
             <p class="text-[10px] font-bold text-secondary/60 uppercase tracking-[0.12em] px-sm pt-sm pb-xs">Guard Management</p>
 
             <!-- Guard Management Accordion -->
-            <div x-data="{ open: {{ request()->routeIs('patrol-schedules.*') || request()->routeIs('areas.*') || request()->routeIs('checkpoints.*') || request()->routeIs('guards.*') || request()->routeIs('shifts.*') ? 'true' : 'false' }} }">
+            <div x-data="{ open: {{ request()->routeIs('patrol-schedules.*') || request()->routeIs('areas.*') || request()->routeIs('guards.*') || request()->routeIs('shifts.*') ? 'true' : 'false' }} }">
                 <button @click="open = !open"
                     class="w-full flex items-center gap-sm px-sm py-[9px] rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-200"
                     :class="open ? 'bg-surface-container text-on-surface font-medium' : ''">
@@ -172,14 +173,7 @@
                        class="flex items-center gap-sm px-sm py-[7px] rounded-lg text-[12px] transition-all duration-150
                        {{ request()->routeIs('areas.*') ? 'bg-primary/10 text-primary font-bold' : 'text-secondary hover:text-on-surface hover:bg-surface-container-high' }}">
                         <span class="material-symbols-outlined text-[16px]" @if(request()->routeIs('areas.*')) style="font-variation-settings: 'FILL' 1;" @endif>location_on</span>
-                        <span>Data Master Area</span>
-                    </a>
-
-                    <a href="{{ route('checkpoints.index') }}"
-                       class="flex items-center gap-sm px-sm py-[7px] rounded-lg text-[12px] transition-all duration-150
-                       {{ request()->routeIs('checkpoints.*') ? 'bg-primary/10 text-primary font-bold' : 'text-secondary hover:text-on-surface hover:bg-surface-container-high' }}">
-                        <span class="material-symbols-outlined text-[16px]" @if(request()->routeIs('checkpoints.*')) style="font-variation-settings: 'FILL' 1;" @endif>qr_code_scanner</span>
-                        <span>Data Checkpoint</span>
+                        <span>Area &amp; Checkpoint</span>
                     </a>
 
                     <a href="{{ route('petugas.index') }}"
@@ -240,7 +234,7 @@
     <div class="flex-1 flex flex-col md:ml-64 h-full relative">
 
         <!-- TopNavBar -->
-        <header class="flex justify-between items-center px-gutter w-full sticky top-0 z-30 bg-surface border-b border-outline-variant h-16 flex-shrink-0">
+        <header class="flex justify-between items-center px-gutter w-full sticky top-0 z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant/70 h-16 flex-shrink-0">
             <div class="md:hidden flex items-center gap-sm">
                 <h1 class="text-headline-md font-headline-md font-bold text-primary">Sentinel Guard Systems</h1>
             </div>
@@ -273,7 +267,7 @@
         </header>
 
         <!-- Scrollable Content Canvas -->
-        <main class="flex-1 overflow-y-auto p-gutter lg:p-[32px] bg-surface-container-lowest">
+        <main class="flex-1 overflow-y-auto p-gutter lg:p-[32px] bg-transparent">
             {{ $slot }}
         </main>
     </div>

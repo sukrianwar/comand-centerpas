@@ -72,12 +72,12 @@
     <!-- Stats Summary Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-md mb-xl">
         <!-- Total Insiden -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+        <div class="soft-card soft-card-hover p-md flex flex-col">
             <p class="text-body-sm font-body-sm text-secondary mb-sm">Total Insiden</p>
             <p class="text-headline-lg font-headline-lg text-on-surface">{{ $stats['total'] }}</p>
         </div>
         <!-- New -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+        <div class="soft-card soft-card-hover p-md flex flex-col">
             <div class="flex items-center gap-xs mb-sm">
                 <div class="w-2 h-2 rounded-full bg-blue-500"></div>
                 <p class="text-body-sm font-body-sm text-secondary">New</p>
@@ -85,7 +85,7 @@
             <p class="text-headline-lg font-headline-lg text-on-surface">{{ $stats['new'] }}</p>
         </div>
         <!-- In Review -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+        <div class="soft-card soft-card-hover p-md flex flex-col">
             <div class="flex items-center gap-xs mb-sm">
                 <div class="w-2 h-2 rounded-full bg-amber-500"></div>
                 <p class="text-body-sm font-body-sm text-secondary">In Review</p>
@@ -93,7 +93,7 @@
             <p class="text-headline-lg font-headline-lg text-on-surface">{{ $stats['in_review'] }}</p>
         </div>
         <!-- Follow-up -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+        <div class="soft-card soft-card-hover p-md flex flex-col">
             <div class="flex items-center gap-xs mb-sm">
                 <div class="w-2 h-2 rounded-full bg-orange-500"></div>
                 <p class="text-body-sm font-body-sm text-secondary">Follow-up</p>
@@ -101,7 +101,7 @@
             <p class="text-headline-lg font-headline-lg text-on-surface">{{ $stats['follow_up'] }}</p>
         </div>
         <!-- Closed -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md flex flex-col">
+        <div class="soft-card soft-card-hover p-md flex flex-col">
             <div class="flex items-center gap-xs mb-sm">
                 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
                 <p class="text-body-sm font-body-sm text-secondary">Closed</p>
@@ -112,7 +112,7 @@
 
     <!-- Filter & Search Bar -->
     <form method="GET" action="{{ route('incidents.index') }}"
-          class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md flex flex-col lg:flex-row gap-sm items-stretch lg:items-center">
+          class="soft-card soft-card-hover p-md mb-md flex flex-col lg:flex-row gap-sm items-stretch lg:items-center">
         <!-- Search -->
         <div class="relative flex-1 max-w-md">
             <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
@@ -157,11 +157,11 @@
     </form>
 
     <!-- Incident Table -->
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+    <div class="soft-card overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="table-modern w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b border-outline-variant text-label-md font-label-md text-secondary bg-surface-bright">
+                    <tr class="border-b border-outline-variant/60 text-label-md font-label-md text-secondary">
                         <th class="py-sm px-md font-medium uppercase tracking-wider">ID</th>
                         <th class="py-sm px-md font-medium uppercase tracking-wider">Judul</th>
                         <th class="py-sm px-md font-medium uppercase tracking-wider">Kategori</th>
@@ -181,7 +181,7 @@
                         $prio = $priorityMeta[$incident->priority] ?? $priorityMeta['low'];
                         $st   = $statusMeta[$incident->status] ?? $statusMeta['new'];
                     @endphp
-                    <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-[#F9FAFB]' : '' }} hover:bg-surface-container-low transition-colors">
+                    <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-surface-container-low' : '' }} hover:bg-surface-container-low transition-colors">
                         <td class="py-sm px-md text-secondary whitespace-nowrap">#INC-{{ str_pad($incident->id, 3, '0', STR_PAD_LEFT) }}</td>
                         <td class="py-sm px-md">
                             <div class="flex items-center gap-sm">
@@ -244,7 +244,7 @@
 
         <!-- Pagination -->
         @if($incidents->hasPages())
-        <div class="flex items-center justify-between p-md border-t border-outline-variant bg-[#F9FAFB]">
+        <div class="flex items-center justify-between p-md border-t border-outline-variant bg-surface-container-low">
             <p class="text-body-sm font-body-sm text-secondary">
                 Menampilkan {{ $incidents->firstItem() }}–{{ $incidents->lastItem() }}
                 dari {{ $incidents->total() }} insiden
@@ -295,7 +295,7 @@
          @keydown.escape.window="detail = null">
         <div class="bg-surface-container-lowest rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-md border-b border-outline-variant bg-[#F9FAFB] rounded-t-xl sticky top-0">
+            <div class="flex items-center justify-between p-md border-b border-outline-variant bg-surface-container-low rounded-t-xl sticky top-0">
                 <div>
                     <p class="text-label-md font-label-md text-secondary" x-text="detail ? detail.id_text : ''"></p>
                     <h3 class="text-headline-md font-headline-md text-on-surface" x-text="detail ? detail.title : ''"></h3>

@@ -33,7 +33,7 @@
     <div class="flex-1 space-y-md">
         
         <!-- Section: Storage Monitoring -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md lg:p-lg">
+        <div class="soft-card p-md lg:p-lg">
             <div class="flex items-center gap-sm mb-md">
                 <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
                     <span class="material-symbols-outlined">dns</span>
@@ -64,7 +64,7 @@
         </div>
 
         <!-- Section: Retensi Data -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md lg:p-lg">
+        <div class="soft-card p-md lg:p-lg">
             <div class="flex items-center gap-sm mb-lg">
                 <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
                     <span class="material-symbols-outlined">auto_delete</span>
@@ -79,8 +79,8 @@
                 <!-- Field: Retensi Log Patroli -->
                 <div class="flex flex-col md:flex-row gap-md items-start md:items-center justify-between">
                     <div class="max-w-lg">
-                        <label class="block text-title-md font-bold text-on-surface mb-xs">Data Patroli & Log Lokasi GPS</label>
-                        <p class="text-body-sm text-secondary">Menyimpan riwayat patroli, timestamp, dan pelacakan koordinat GPS sesuai dengan standar Kepatuhan Data (PDP).</p>
+                        <label class="block text-title-md font-bold text-on-surface mb-xs">Data Patroli & Riwayat Checkpoint</label>
+                        <p class="text-body-sm text-secondary">Menyimpan riwayat patroli, timestamp, dan bukti foto checkpoint sesuai dengan standar Kepatuhan Data (PDP).</p>
                     </div>
                     <div class="flex items-center gap-sm">
                         <input type="number" value="90" class="w-24 bg-surface-container-low border border-outline-variant rounded-lg py-sm px-md text-on-surface text-center font-bold focus:border-primary-container outline-none">
@@ -116,7 +116,7 @@
         </div>
 
         <!-- Section: Audit Trail -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md lg:p-lg">
+        <div class="soft-card p-md lg:p-lg">
             <div class="flex items-center gap-sm mb-lg">
                 <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
                     <span class="material-symbols-outlined">history_edu</span>

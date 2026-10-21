@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        $this->call(ShiftSeeder::class);
 
         // Akun contoh hanya dibuat di lingkungan lokal. Di staging/produksi,
         // akun admin harus dibuat manual lewat menu Petugas atau perintah
@@ -25,13 +26,30 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
+        $superAdminRole = Role::where('role_name', 'Super Admin')->first();
+
+        User::firstOrCreate(
+            ['username' => 'superadmin'],
+            [
+                'name' => 'Super Admin Lokal',
+                'email' => 'superadmin@localhost',
+                'password' => 'password',
+                'role_id' => $superAdminRole->id,
+                'status' => 'active',
+            ]
+        );
+
         $adminRole = Role::where('role_name', 'Admin')->first();
 
-        User::factory()->create([
-            'name' => 'Admin Lokal',
-            'username' => 'admin',
-            'email' => 'admin@localhost',
-            'role_id' => $adminRole->id,
-        ]);
+        User::firstOrCreate(
+            ['username' => 'admin'],
+            [
+                'name' => 'Admin Lokal',
+                'email' => 'admin@localhost',
+                'password' => 'password',
+                'role_id' => $adminRole->id,
+                'status' => 'active',
+            ]
+        );
     }
 }

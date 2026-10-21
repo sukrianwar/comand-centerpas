@@ -31,7 +31,7 @@
 
 {{-- ══ Filter & Search Bar ═════════════════════════════════════════════════ --}}
 <form method="GET" action="{{ route('petugas.index') }}"
-      class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md flex flex-col lg:flex-row gap-sm items-stretch lg:items-center">
+      class="soft-card soft-card-hover p-md mb-md flex flex-col lg:flex-row gap-sm items-stretch lg:items-center">
     
     {{-- Search --}}
     <div class="relative flex-1">
@@ -79,11 +79,11 @@
 </form>
 
 {{-- ══ Data Table ══════════════════════════════════════════════════════════ --}}
-<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden" x-data="statusToggle()">
+<div class="soft-card overflow-hidden" x-data="statusToggle()">
     <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="table-modern w-full text-left border-collapse">
             <thead>
-                <tr class="border-b border-outline-variant text-label-md font-label-md text-secondary bg-surface-bright">
+                <tr class="border-b border-outline-variant/60 text-label-md font-label-md text-secondary">
                     <th class="py-sm px-md font-medium uppercase tracking-wider w-12"></th>
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Info Petugas</th>
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Role</th>
@@ -95,7 +95,7 @@
             <tbody class="text-body-sm font-body-sm text-on-surface">
 
                 @forelse($users as $user)
-                <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-[#F9FAFB]' : '' }} hover:bg-surface-container-low transition-colors group">
+                <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-surface-container-low' : '' }} hover:bg-surface-container-low transition-colors group">
 
                     {{-- Avatar --}}
                     <td class="py-sm pl-md pr-2 text-center">
@@ -114,6 +114,7 @@
                     <td class="py-sm px-md">
                         @php
                             $roleColors = [
+                                'Super Admin' => 'bg-purple-50 text-purple-700 border-purple-200',
                                 'Admin' => 'bg-red-50 text-red-700 border-red-200',
                                 'Supervisor' => 'bg-blue-50 text-blue-700 border-blue-200',
                                 'Security Guard' => 'bg-amber-50 text-amber-700 border-amber-200',
@@ -191,7 +192,7 @@
 
     {{-- ── Pagination ──────────────────────────────────────────────────── --}}
     @if($users->hasPages())
-    <div class="flex items-center justify-between p-md border-t border-outline-variant bg-[#F9FAFB]">
+    <div class="flex items-center justify-between p-md border-t border-outline-variant bg-surface-container-low">
         <p class="text-body-sm font-body-sm text-secondary">
             Menampilkan {{ $users->firstItem() }}–{{ $users->lastItem() }}
             dari {{ $users->total() }} petugas

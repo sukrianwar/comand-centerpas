@@ -6,7 +6,6 @@ use App\Http\Requests\StorePatrolLogRequest;
 use App\Models\Checkpoint;
 use App\Models\PatrolLog;
 use App\Models\PatrolSchedule;
-use App\Services\GeolocationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +15,7 @@ use Illuminate\View\View;
 class PatrolLogController extends Controller
 {
     // ─────────────────────────────────────────────────────────────────────────
-    // patrol() — Halaman scan checkpoint, kirim data jadwal aktif ke view
+    // patrol() — Halaman pencatatan checkpoint, kirim data jadwal aktif ke view
     // ─────────────────────────────────────────────────────────────────────────
 
     public function patrol(): View
@@ -56,7 +55,7 @@ class PatrolLogController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // store() — Simpan hasil scan checkpoint (dipanggil via AJAX/fetch)
+    // store() — Simpan hasil pencatatan checkpoint (dipanggil via AJAX/fetch)
     // ─────────────────────────────────────────────────────────────────────────
 
     public function store(StorePatrolLogRequest $request): JsonResponse
@@ -69,7 +68,7 @@ class PatrolLogController extends Controller
 
         // 2. Pastikan jadwal masih dalam periode aktif (global, berlaku harian).
         //    Jadwal yang statusnya bukan scheduled/ongoing atau di luar jam
-        //    aktifnya tidak boleh di-scan.
+        //    aktifnya tidak boleh dicatat.
         $now = Carbon::now();
         $scheduleDate = $now->toDateString();
         $startTime = Carbon::createFromFormat('Y-m-d H:i:s', $scheduleDate.' '.$schedule->start_time);
@@ -80,9 +79,8 @@ class PatrolLogController extends Controller
             $endTime->addDay();
         }
 
-        // 2. Pastikan jadwal masih dalam periode aktif (global, berlaku harian).
-        //    Status 'ongoing' selalu aktif; status 'scheduled' harus masih
-        //    berada di dalam window jam aktifnya.
+        // Status 'ongoing' selalu aktif; status 'scheduled' harus masih
+        // berada di dalam window jam aktifnya.
         $inWindow = $now->between($startTime, $endTime);
 
         if (! in_array($schedule->status, ['scheduled', 'ongoing']) || ($schedule->status === 'scheduled' && ! $inWindow)) {
@@ -101,36 +99,7 @@ class PatrolLogController extends Controller
             ], 422);
         }
 
-        // 4. Hitung jarak GPS device ke checkpoint.
-        //    Tahap development: validasi jarak dilewati (distance dianggap 0).
-        $skipGps = config('app.skip_gps_validation', false);
-
-        if ($skipGps) {
-            $distanceMeters = 0;
-        } else {
-            $distanceMeters = GeolocationService::distanceInMeters(
-                (float) $request->latitude,
-                (float) $request->longitude,
-                (float) $checkpoint->latitude,
-                (float) $checkpoint->longitude
-            );
-        }
-
-        // 4. Tolak jika di luar radius checkpoint
-        if (! $skipGps && $distanceMeters > $checkpoint->radius) {
-            return response()->json([
-                'success' => false,
-                'message' => sprintf(
-                    'Anda berada di luar jangkauan checkpoint ini (jarak: %.0f meter, maksimal %d meter).',
-                    $distanceMeters,
-                    $checkpoint->radius
-                ),
-                'distance' => round($distanceMeters),
-                'radius' => $checkpoint->radius,
-            ], 422);
-        }
-
-        // 5. Cek apakah checkpoint ini SUDAH pernah discan oleh petugas ini
+        // 4. Cek apakah checkpoint ini SUDAH pernah discan oleh petugas ini
         //    di jadwal yang sama HARI INI (progress scan per petugas per hari,
         //    jadwal dipakai bersama dan berlaku harian)
         $alreadyScanned = PatrolLog::where('patrol_schedule_id', $schedule->id)
@@ -141,36 +110,33 @@ class PatrolLogController extends Controller
         if ($alreadyScanned) {
             return response()->json([
                 'success' => false,
-                'message' => 'Checkpoint ini sudah discan sebelumnya dalam jadwal ini.',
+                'message' => 'Checkpoint ini sudah dicatat sebelumnya dalam jadwal ini.',
             ], 422);
         }
 
-        // 6. Simpan foto ke storage/app/public/patrol-photos/
+        // 5. Simpan foto ke storage/app/public/patrol-photos/
         $photoPath = $request->file('photo')->store('patrol-photos', 'public');
 
-        // 7. Status scan. Scan hanya lolos bila jadwal 'ongoing' (selalu aktif)
+        // 6. Status. Pencatatan hanya lolos bila jadwal 'ongoing' (selalu aktif)
         //    atau 'scheduled' yang masih di dalam window jam aktifnya (lihat
-        //    langkah 2). Karena scan di luar window sudah ditolak, semua scan
+        //    langkah 2). Karena di luar window sudah ditolak, semua catatan
         //    yang tersimpan di sini selalu tepat waktu ('on_time').
         //    Nilai enum 'late' disediakan untuk kebutuhan sistem lain (mis. impor
-        //    data historis) dan tidak dipakai oleh alur scan saat ini.
+        //    data historis) dan tidak dipakai oleh alur pencatatan saat ini.
         $status = 'on_time';
 
-        // 8. Simpan PatrolLog
+        // 7. Simpan PatrolLog
         $log = PatrolLog::create([
             'patrol_schedule_id' => $schedule->id,
             'checkpoint_id' => $checkpoint->id,
             'user_id' => $user->id,
             'scanned_at' => $now,
-            'latitude' => $request->latitude ?? 0,
-            'longitude' => $request->longitude ?? 0,
-            'distance_meters' => $distanceMeters,
             'photo_path' => $photoPath,
             'status' => $status,
             'notes' => $request->notes,
         ]);
 
-        // 9. Hitung progress terkini: berapa checkpoint sudah discan hari ini
+        // 8. Hitung progress terkini: berapa checkpoint sudah dicatat hari ini
         //    oleh petugas ini di jadwal ini
         $totalCheckpoints = count($checkpointIds);
         $scannedLogs = PatrolLog::where('patrol_schedule_id', $schedule->id)
@@ -184,10 +150,9 @@ class PatrolLogController extends Controller
         return response()->json([
             'success' => true,
             'message' => $isComplete
-                ? 'Patroli selesai! Semua checkpoint sudah discan.'
-                : "Checkpoint berhasil discan! ({$scannedCount}/{$totalCheckpoints})",
+                ? 'Patroli selesai! Semua checkpoint sudah dicatat.'
+                : "Checkpoint berhasil dicatat! ({$scannedCount}/{$totalCheckpoints})",
             'status' => $status,
-            'distance' => round($distanceMeters),
             'scanned_count' => $scannedCount,
             'total_checkpoints' => $totalCheckpoints,
             'scanned_ids' => $scannedIds,

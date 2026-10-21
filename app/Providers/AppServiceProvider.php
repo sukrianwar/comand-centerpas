@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,10 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Safety net: validasi GPS tidak boleh dilewati di produksi,
-        // apa pun nilai DEV_SKIP_GPS di .env.
-        if ($this->app->isProduction()) {
-            config(['app.skip_gps_validation' => false]);
-        }
+        // Super Admin selalu lolos semua pengecekan Gate/Policy.
+        Gate::before(function ($user, string $ability) {
+            return $user->isSuperAdmin() ? true : null;
+        });
     }
 }

@@ -26,7 +26,7 @@
         <div class="lg:col-span-2 space-y-md">
 
             {{-- Card: Informasi Dasar --}}
-            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+            <div class="soft-card p-lg">
                 <h3 class="text-headline-md font-headline-md text-on-surface mb-lg flex items-center gap-sm">
                     <span class="material-symbols-outlined text-[22px] text-primary">event_note</span>
                     Informasi Dasar
@@ -34,18 +34,18 @@
 
                 <div class="space-y-md">
 
-                    {{-- Nama Jadwal --}}
+                    {{-- Nama Jadwal (otomatis) --}}
                     <div>
-                        <label for="schedule_name" class="block text-body-sm font-semibold text-on-surface mb-xs">
-                            Nama Jadwal / Rute <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="schedule_name" name="schedule_name"
-                               value="{{ old('schedule_name') }}"
-                               placeholder="Contoh: Rute Utama Pagi Gedung A"
-                               class="w-full bg-surface-container-low border rounded-xl py-xs px-sm text-body-sm text-on-surface outline-none transition-all
-                                      @error('schedule_name') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200
-                                      @else border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/10 @enderror">
-                        <x-input-error :messages="$errors->get('schedule_name')" class="mt-xs" />
+                        <span class="block text-body-sm font-semibold text-on-surface mb-xs">
+                            Nama Jadwal / Rute <span class="text-secondary font-normal">(otomatis)</span>
+                        </span>
+                        <div class="flex items-start gap-sm bg-primary/5 border border-primary/20 rounded-xl py-xs px-sm text-body-sm">
+                            <span class="material-symbols-outlined text-[18px] text-primary mt-0.5">auto_awesome</span>
+                            <div>
+                                <p class="font-semibold text-on-surface" x-text="generatedName || 'Lengkapi area, shift, dan putaran'"></p>
+                                <p class="text-label-md text-secondary mt-0.5">Dibuat otomatis dari area, shift, dan putaran.</p>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Area --}}
@@ -68,38 +68,26 @@
                         <x-input-error :messages="$errors->get('area_id')" class="mt-xs" />
                     </div>
 
-                    {{-- Shift (Visual Toggle) --}}
+                    {{-- Shift (dari master shift) --}}
                     <div>
-                        <label class="block text-body-sm font-semibold text-on-surface mb-sm">
+                        <label for="shift_id" class="block text-body-sm font-semibold text-on-surface mb-xs">
                             Shift <span class="text-red-500">*</span>
                         </label>
-                        <div class="flex gap-sm flex-wrap">
-                            {{-- Pagi --}}
-                            <label class="cursor-pointer">
-                                <input type="radio" name="shift" value="pagi" class="sr-only peer"
-                                       x-model="selectedShift"
-                                       @if(old('shift', '') === 'pagi') checked @endif>
-                                <div class="flex items-center gap-sm px-md py-sm rounded-xl border-2 transition-all select-none
-                                            peer-checked:bg-amber-50 peer-checked:border-amber-400 peer-checked:text-amber-800 peer-checked:font-bold
-                                            border-outline-variant text-secondary hover:border-amber-300 hover:bg-amber-50/50">
-                                    <span class="material-symbols-outlined text-[20px]">light_mode</span>
-                                    <span class="text-body-sm font-medium">Pagi</span>
-                                </div>
-                            </label>
-                            {{-- Malam --}}
-                            <label class="cursor-pointer">
-                                <input type="radio" name="shift" value="malam" class="sr-only peer"
-                                       x-model="selectedShift"
-                                       @if(old('shift', '') === 'malam') checked @endif>
-                                <div class="flex items-center gap-sm px-md py-sm rounded-xl border-2 transition-all select-none
-                                            peer-checked:bg-indigo-50 peer-checked:border-indigo-400 peer-checked:text-indigo-800 peer-checked:font-bold
-                                            border-outline-variant text-secondary hover:border-indigo-300 hover:bg-indigo-50/50">
-                                    <span class="material-symbols-outlined text-[20px]">dark_mode</span>
-                                    <span class="text-body-sm font-medium">Malam</span>
-                                </div>
-                            </label>
-                        </div>
-                        <x-input-error :messages="$errors->get('shift')" class="mt-xs" />
+                        <select id="shift_id" name="shift_id"
+                                x-model="selectedShiftId"
+                                @change="applyShiftTime(true)"
+                                class="w-full bg-surface-container-low border rounded-xl py-xs px-sm text-body-sm text-on-surface outline-none transition-all
+                                       @error('shift_id') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200
+                                       @else border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/10 @enderror">
+                            <option value="" disabled {{ old('shift_id') ? '' : 'selected' }}>-- Pilih Shift --</option>
+                            @foreach($shifts as $shift)
+                                <option value="{{ $shift->id }}">
+                                    {{ $shift->shift_name }} ({{ \Carbon\Carbon::parse($shift->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($shift->end_time)->format('H:i') }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-label-md text-secondary mt-xs">Memilih shift akan mengisi jam mulai &amp; selesai otomatis (masih bisa diubah).</p>
+                        <x-input-error :messages="$errors->get('shift_id')" class="mt-xs" />
                     </div>
 
                     {{-- Urutan Putaran (Button Group) --}}
@@ -112,6 +100,7 @@
                             @foreach([1 => 'Putaran ke-1', 2 => 'Putaran ke-2', 3 => 'Putaran ke-3'] as $val => $label)
                             <label class="cursor-pointer">
                                 <input type="radio" name="round_number" value="{{ $val }}" class="sr-only peer"
+                                       x-model="selectedRound"
                                        @if(old('round_number') == $val) checked @endif>
                                 <div class="flex flex-col items-center gap-xs px-md py-sm rounded-xl border-2 transition-all select-none min-w-[80px]
                                             peer-checked:bg-primary-container peer-checked:border-primary peer-checked:text-on-primary
@@ -128,11 +117,11 @@
                 </div>
             </div>
 
-            {{-- Card: Waktu & Interval --}}
-            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-lg">
+            {{-- Card: Waktu Patroli --}}
+            <div class="soft-card p-lg">
                 <h3 class="text-headline-md font-headline-md text-on-surface mb-lg flex items-center gap-sm">
                     <span class="material-symbols-outlined text-[22px] text-primary">schedule</span>
-                    Waktu &amp; Interval
+                    Waktu Patroli
                 </h3>
 
                 <div class="space-y-md">
@@ -166,23 +155,6 @@
                         </div>
                     </div>
 
-                    {{-- Interval --}}
-                    <div>
-                        <label for="interval" class="block text-body-sm font-semibold text-on-surface mb-xs">
-                            Interval Antar Putaran <span class="text-secondary font-normal">(opsional)</span>
-                        </label>
-                        <div class="relative max-w-xs">
-                            <input type="number" id="interval" name="interval"
-                                   value="{{ old('interval') }}"
-                                   min="1" placeholder="Contoh: 60" autocomplete="off"
-                                   class="w-full bg-surface-container-low border rounded-xl py-xs pl-sm pr-[60px] text-body-sm text-on-surface outline-none transition-all
-                                          @error('interval') border-red-400 focus:border-red-500
-                                          @else border-outline-variant focus:border-primary @enderror">
-                            <span class="absolute right-sm top-1/2 -translate-y-1/2 text-secondary text-label-md">menit</span>
-                        </div>
-                        <x-input-error :messages="$errors->get('interval')" class="mt-xs" />
-                    </div>
-
                     {{-- Status (hidden di create, default scheduled) --}}
                     <input type="hidden" name="status" value="scheduled">
                     <div class="flex items-center gap-sm p-sm bg-surface-container-low rounded-xl text-secondary text-body-sm border border-outline-variant">
@@ -196,7 +168,7 @@
 
         {{-- ─── Kolom Kanan: Pemilihan Checkpoint ────────────────────────── --}}
         <div class="lg:col-span-1">
-            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden sticky top-[80px]">
+            <div class="soft-card overflow-hidden sticky top-[80px]">
 
                 <div class="p-md border-b border-outline-variant bg-surface-bright flex items-center justify-between">
                     <div>
@@ -205,7 +177,7 @@
                             <span x-text="selectedCheckpoints.length">0</span> dipilih &bull; Drag untuk atur urutan
                         </p>
                     </div>
-                    <span class="material-symbols-outlined text-[22px] text-primary">qr_code_scanner</span>
+                    <span class="material-symbols-outlined text-[22px] text-primary">pin_drop</span>
                 </div>
 
                 {{-- Error global untuk checkpoints --}}
@@ -326,13 +298,40 @@
 </form>
 
 {{-- ══ Alpine.js Logic ════════════════════════════════════════════════════ --}}
+@php
+    $shiftOptions = $shifts->map(fn ($s) => [
+        'id'         => $s->id,
+        'name'       => $s->shift_name,
+        'start_time' => \Carbon\Carbon::parse($s->start_time)->format('H:i'),
+        'end_time'   => \Carbon\Carbon::parse($s->end_time)->format('H:i'),
+    ])->values();
+
+    $areaOptions = $areas->map(fn ($a) => [
+        'id'   => $a->id,
+        'name' => $a->area_name,
+    ])->values();
+@endphp
 <script>
 function patrolForm() {
     return {
-        selectedShift: '{{ old('shift', '') }}',
+        selectedShiftId: '{{ old('shift_id', '') }}',
         selectedAreaId: '{{ old('area_id', '') }}',
+        selectedRound: '{{ old('round_number', '') }}',
+        shifts: @json($shiftOptions),
+        areas: @json($areaOptions),
         selectedCheckpoints: @json(collect(array_values(old('checkpoints', [])))->map(fn($id) => ['id' => (int)$id, 'name' => ''])),
         checkpointSearch: '',
+
+        get generatedName() {
+            const area  = this.areas.find(a => String(a.id) === String(this.selectedAreaId));
+            const shift = this.shifts.find(s => String(s.id) === String(this.selectedShiftId));
+
+            if (!area || !shift || !this.selectedRound) {
+                return '';
+            }
+
+            return `${area.name} - Shift ${shift.name} - Putaran ${this.selectedRound}`;
+        },
 
         init() {
             // Jika ada old checkpoints, restore nama dari DOM
@@ -351,7 +350,26 @@ function patrolForm() {
                         el.value = el.dataset.serverValue;
                     }
                 });
+
+                // Isi jam dari shift terpilih bila field masih kosong.
+                this.applyShiftTime(false);
             });
+        },
+
+        applyShiftTime(force = false) {
+            const shift = this.shifts.find(s => String(s.id) === String(this.selectedShiftId));
+            if (!shift) return;
+
+            const startEl = document.getElementById('start_time');
+            const endEl   = document.getElementById('end_time');
+            if (!startEl || !endEl) return;
+
+            if (force || !startEl.value) startEl.value = shift.start_time;
+            if (force || !endEl.value)   endEl.value   = shift.end_time;
+
+            // Sinkronkan agar pembersihan autofill tidak mengembalikan nilai.
+            startEl.dataset.serverValue = startEl.value;
+            endEl.dataset.serverValue   = endEl.value;
         },
 
         addCheckpoint(id, name) {

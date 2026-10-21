@@ -12,7 +12,7 @@
 <div class="flex flex-col md:flex-row md:items-end justify-between mb-lg gap-md">
     <div>
         <p class="text-body-md font-body-md text-secondary mb-xs">Guard Management</p>
-        <h2 class="text-headline-lg font-headline-lg text-on-surface">Data Master Area</h2>
+        <h2 class="text-headline-lg font-headline-lg text-on-surface">Area &amp; Checkpoint</h2>
     </div>
     <div class="flex gap-sm">
         <a href="{{ route('areas.create') }}"
@@ -24,7 +24,7 @@
 
 {{-- ══ Filter & Search Bar ═════════════════════════════════════════════════ --}}
 <form method="GET" action="{{ route('areas.index') }}"
-      class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md mb-md flex flex-col md:flex-row gap-sm items-stretch md:items-center">
+      class="soft-card soft-card-hover p-md mb-md flex flex-col md:flex-row gap-sm items-stretch md:items-center">
     {{-- Search --}}
     <div class="relative flex-1 max-w-md">
         <span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-secondary text-[20px]">search</span>
@@ -48,11 +48,11 @@
 </form>
 
 {{-- ══ Data Table ══════════════════════════════════════════════════════════ --}}
-<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="soft-card overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="table-modern w-full text-left border-collapse">
             <thead>
-                <tr class="border-b border-outline-variant text-label-md font-label-md text-secondary bg-surface-bright">
+                <tr class="border-b border-outline-variant/60 text-label-md font-label-md text-secondary">
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Nama Area</th>
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Kode Area</th>
                     <th class="py-sm px-md font-medium uppercase tracking-wider">Deskripsi</th>
@@ -64,7 +64,7 @@
             <tbody class="text-body-sm font-body-sm text-on-surface">
 
                 @forelse($areas as $area)
-                <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-[#F9FAFB]' : '' }} hover:bg-surface-container-low transition-colors group">
+                <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-surface-container-low' : '' }} hover:bg-surface-container-low transition-colors group">
 
                     {{-- Nama Area --}}
                     <td class="py-sm px-md font-semibold text-primary">
@@ -107,9 +107,11 @@
 
                     {{-- Aksi --}}
                     <td class="py-sm px-md text-right whitespace-nowrap">
-                        <a href="{{ route('areas.edit', $area) }}"
-                           class="inline-flex p-xs text-on-surface-variant hover:bg-surface-container rounded-full transition-colors" title="Edit">
-                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                        <a href="{{ route('areas.show', $area) }}"
+                           class="inline-flex items-center gap-xs px-2 py-1 rounded-lg text-primary hover:bg-primary/10 transition-colors text-label-md font-semibold"
+                           title="Kelola area & checkpoint">
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                            Kelola
                         </a>
 
                         <form method="POST"
@@ -154,7 +156,7 @@
 
     {{-- ── Pagination ──────────────────────────────────────────────────── --}}
     @if($areas->hasPages())
-    <div class="flex items-center justify-between p-md border-t border-outline-variant bg-[#F9FAFB]">
+    <div class="flex items-center justify-between p-md border-t border-outline-variant bg-surface-container-low">
         <p class="text-body-sm font-body-sm text-secondary">
             Menampilkan {{ $areas->firstItem() }}–{{ $areas->lastItem() }}
             dari {{ $areas->total() }} area

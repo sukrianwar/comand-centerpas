@@ -14,19 +14,13 @@ class PatrolLog extends Model
         'checkpoint_id',
         'user_id',
         'scanned_at',
-        'latitude',
-        'longitude',
-        'distance_meters',
         'photo_path',
         'status',
         'notes',
     ];
 
     protected $casts = [
-        'scanned_at'       => 'datetime',
-        'latitude'         => 'decimal:7',
-        'longitude'        => 'decimal:7',
-        'distance_meters'  => 'decimal:2',
+        'scanned_at' => 'datetime',
     ];
 
     // ─── Relasi ───────────────────────────────────────────────────────────────
