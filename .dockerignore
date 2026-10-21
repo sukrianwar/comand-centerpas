@@ -1,20 +1,29 @@
-node_modules
-vendor
+# VCS & editor
 .git
 .gitignore
+.idea
+.vscode
+
+# Dependency & build artifacts (dibangun ulang di stage composer/frontend)
+node_modules
+vendor
+public/build
+public/hot
+
+# Secrets / env lokal
 .env
 .env.backup
 .env.production
+docker/.env.production
+
+# Runtime state (dibuat ulang saat container start)
+storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
-storage/logs/*
 bootstrap/cache/*
+
+# Log sampah
+*.log
 npm-debug.log
 yarn-error.log
-*.md
-!README.md
-docs
-test_*.php
-_e2e_*.php
-read_docx.php

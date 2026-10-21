@@ -1,0 +1,115 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: commandcenter-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: commandcenter
+      MYSQL_DATABASE: commandcenter
+      TZ: Asia/Jakarta
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pcommandcenter"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - commandcenter
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: commandcenter-app:latest
+    container_name: commandcenter-app
+    restart: unless-stopped
+    env_file:
+      - ./docker/.env.production
+    volumes:
+      - app_root:/var/www/html
+      - ./docker/.env.production:/var/www/html/.env:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'php-fpm' > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - commandcenter
+
+  worker:
+    image: commandcenter-app:latest
+    container_name: commandcenter-worker
+    restart: unless-stopped
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    command:
+      - sh
+      - -c
+      - |
+        until php -r "new PDO('mysql:host=mysql;dbname=commandcenter','root','commandcenter');" 2>/dev/null; do
+          echo 'waiting for mysql...'; sleep 3;
+        done
+        php artisan queue:work --tries=3 --sleep=1 --backoff=5 --max-time=3600 --max-jobs=1000
+    env_file:
+      - ./docker/.env.production
+    volumes:
+      - app_root:/var/www/html
+      - ./docker/.env.production:/var/www/html/.env:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      app:
+        condition: service_started
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - commandcenter
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: commandcenter-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - app_root:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - commandcenter
+
+volumes:
+  mysql_data:
+  app_root:
+
+networks:
+  commandcenter:
+    driver: bridge

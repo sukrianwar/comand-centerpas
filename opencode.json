@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "*docker rm*": "ask",
+      "*docker rmi*": "ask",
+      "*docker stop*": "ask",
+      "*docker kill*": "ask",
+      "*compose down*": "ask",
+      "*system prune*": "ask",
+      "*volume rm*": "ask",
+      "*artisan migrate*": "ask",
+      "*artisan db:seed*": "ask",
+      "*artisan migrate:fresh*": "ask",
+      "*mysql*INSERT*": "ask",
+      "*mysql*UPDATE*": "ask",
+      "*mysql*DELETE*": "ask",
+      "*mysql*DROP*": "ask",
+      "*mysql*TRUNCATE*": "ask",
+      "*mysql*ALTER*": "ask"
+    }
+  }
+}
