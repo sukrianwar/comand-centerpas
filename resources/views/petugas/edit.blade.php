@@ -63,6 +63,20 @@
                 <x-input-error :messages="$errors->get('email')" class="mt-xs" />
             </div>
 
+            {{-- Nomor Telepon --}}
+            <div>
+                <label for="phone" class="block text-body-sm font-semibold text-on-surface mb-xs">
+                    Nomor Telepon <span class="text-secondary font-normal">(opsional)</span>
+                </label>
+                <input type="text" id="phone" name="phone"
+                       value="{{ old('phone', $user->phone) }}"
+                       placeholder="Contoh: 0812xxxxxxx"
+                       class="w-full bg-surface-container-low border rounded-xl py-xs px-sm text-body-sm text-on-surface outline-none transition-all
+                              @error('phone') border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200
+                              @else border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/10 @enderror">
+                <x-input-error :messages="$errors->get('phone')" class="mt-xs" />
+            </div>
+
             {{-- Role --}}
             <div>
                 <label for="role_id" class="block text-body-sm font-semibold text-on-surface mb-xs">

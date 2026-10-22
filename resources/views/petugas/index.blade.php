@@ -108,6 +108,9 @@
                     <td class="py-sm px-md">
                         <div class="font-bold text-primary">{{ $user->name }}</div>
                         <div class="text-secondary text-[12px] font-mono mt-0.5">{{ '@' . $user->username }}</div>
+                        @if($user->phone)
+                        <div class="text-secondary text-[11px] mt-0.5">{{ $user->phone }}</div>
+                        @endif
                     </td>
 
                     {{-- Role --}}
@@ -154,6 +157,25 @@
 
                     {{-- Aksi --}}
                     <td class="py-sm px-md text-right whitespace-nowrap">
+                        @if(auth()->check()
+                            && auth()->user()->isSuperAdmin()
+                            && auth()->id() !== $user->id
+                            && !$user->isSuperAdmin()
+                            && $user->status === 'active'
+                            && !session()->has('impersonator_id'))
+                        <form method="POST"
+                              action="{{ route('petugas.impersonate', $user) }}"
+                              class="inline"
+                              onsubmit="return confirm('Login sebagai \'{{ addslashes($user->name) }}\'? Anda dapat kembali ke akun Super Admin melalui banner di bagian atas halaman.');">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex p-xs text-primary hover:bg-primary/10 rounded-full transition-colors"
+                                    title="Login sebagai" aria-label="Login sebagai {{ $user->name }}">
+                                <span class="material-symbols-outlined text-[20px]">switch_account</span>
+                            </button>
+                        </form>
+                        @endif
+
                         <a href="{{ route('petugas.edit', $user) }}"
                            class="inline-flex p-xs text-on-surface-variant hover:bg-surface-container rounded-full transition-colors" title="Edit">
                             <span class="material-symbols-outlined text-[20px]">edit</span>

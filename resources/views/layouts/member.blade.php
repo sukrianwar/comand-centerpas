@@ -200,7 +200,9 @@
 
             <!-- Main Scrollable Content Area -->
             <main class="flex-1 overflow-y-auto bg-transparent">
-                <div class="w-full p-md lg:p-lg lg:py-xl">
+                <div class="w-full p-md pb-24 lg:p-lg lg:pt-xl lg:pb-28">
+
+                    <x-impersonation-banner />
 
                     {{-- ── Flash: Error (mis. redirect dari middleware restrict.guard) ──────── --}}
                     @if(session('error'))
@@ -225,6 +227,17 @@
         </div>
         
     </div>
+
+    {{-- FAB: Lapor Insiden --}}
+    <button type="button"
+            @click="$dispatch('open-incident-modal')"
+            class="fixed bottom-5 right-5 z-30 inline-flex items-center gap-xs rounded-full bg-primary px-md py-sm text-on-primary shadow-lg shadow-primary/30 transition-all hover:bg-surface-tint hover:shadow-xl active:scale-95 md:bottom-8 md:right-8"
+            aria-label="Laporkan insiden atau temuan">
+        <span class="material-symbols-outlined text-[22px]">report_problem</span>
+        <span class="hidden text-body-sm font-bold sm:inline">Lapor Insiden</span>
+    </button>
+
+    <x-member-incident-modal :areas="$reportAreas ?? []" :suggested-area-id="$suggestedAreaId ?? null" />
 
 </body>
 </html>

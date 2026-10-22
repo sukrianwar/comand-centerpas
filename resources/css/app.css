@@ -19,6 +19,66 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* ── Command Center sidebar drawer (< 768px) ───────────────────── */
+.cc-sidebar {
+    transition:
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s 0.3s;
+    transform: translateX(-100%);
+    visibility: hidden;
+}
+
+.cc-sidebar.cc-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition:
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s 0s;
+}
+
+@media (min-width: 768px) {
+    .cc-sidebar,
+    .cc-sidebar.cc-open {
+        transform: none !important;
+        visibility: visible !important;
+        transition: none;
+    }
+
+    .cc-overlay,
+    .cc-toggle {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cc-sidebar {
+        transition: none;
+    }
+}
+
+/* ── Accordion Guard Management ────────────────────────────────── */
+.sub-menu {
+    max-height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition:
+        max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s 0.3s;
+}
+
+.sub-menu.open {
+    max-height: 500px;
+    visibility: visible;
+    transition:
+        max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0s 0s;
+}
+
 @layer base {
     html {
         -webkit-font-smoothing: antialiased;

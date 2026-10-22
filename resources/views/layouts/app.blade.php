@@ -37,39 +37,27 @@
             background: linear-gradient(135deg, #1e3a5f 0%, #1a2e4a 60%, #0f1e30 100%);
         }
 
-        /* Nav item active glow */
-        .nav-active {
-            background: linear-gradient(90deg, rgba(var(--color-primary-rgb, 59,130,246), 0.18) 0%, rgba(var(--color-primary-rgb, 59,130,246), 0.06) 100%);
-            border-left: 3px solid currentColor;
-        }
-
-        /* Sidebar pill active */
-        .sidebar-item-active {
-            position: relative;
-        }
-        .sidebar-item-active::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 3px;
-            border-radius: 0 3px 3px 0;
-        }
-
-        /* Smooth accordion */
-        .sub-menu {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sub-menu.open {
-            max-height: 300px;
-        }
     </style>
 </head>
-<body class="bg-background text-on-background flex h-screen overflow-hidden">
+<body class="bg-background text-on-background flex h-screen overflow-hidden"
+      x-data="{ sidebarOpen: false }"
+      @resize.window="if (window.innerWidth >= 768) sidebarOpen = false"
+      @keydown.escape.window="sidebarOpen = false; if (window.innerWidth < 768) $nextTick(() => $refs.menuButton?.focus())">
+
+    <!-- Mobile Sidebar Overlay -->
+    <div x-show="sidebarOpen" x-cloak
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm cc-overlay md:hidden"
+         @click="sidebarOpen = false; $nextTick(() => $refs.menuButton?.focus())"></div>
 
     <!-- ===== SIDEBAR ===== -->
-    <aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 bg-surface/95 backdrop-blur-md border-r border-outline-variant/70 shadow-soft overflow-hidden">
+    <aside class="cc-sidebar flex flex-col h-dvh w-64 fixed left-0 top-0 z-50 md:z-40 bg-surface/95 backdrop-blur-md border-r border-outline-variant/70 shadow-soft overflow-hidden"
+           :class="{ 'cc-open': sidebarOpen }">
 
         <!-- Brand Header -->
         <div class="sidebar-brand px-md py-lg flex items-center gap-sm flex-shrink-0">
@@ -80,6 +68,11 @@
                 <h1 class="text-[15px] font-bold text-white leading-tight tracking-tight truncate">Command Center</h1>
                 <p class="text-[11px] text-white/60 font-medium tracking-widest uppercase mt-0.5">Sentinel Guard</p>
             </div>
+            <button type="button" @click="sidebarOpen = false; $nextTick(() => $refs.menuButton?.focus())"
+                    class="cc-toggle ml-auto p-xs text-white/70 hover:text-white transition-colors"
+                    aria-label="Tutup menu">
+                <span class="material-symbols-outlined text-[22px]">close</span>
+            </button>
         </div>
 
         <!-- User Info Strip -->
@@ -101,7 +94,8 @@
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 overflow-y-auto py-sm px-xs space-y-xs" id="sidebar-nav">
+        <nav class="flex-1 overflow-y-auto py-sm px-xs space-y-xs" id="sidebar-nav"
+             @click="if ($event.target.closest('a')) { sidebarOpen = false; $nextTick(() => $refs.menuButton?.focus()); }">
 
             <!-- Section Label -->
             <p class="text-[10px] font-bold text-secondary/60 uppercase tracking-[0.12em] px-sm pt-xs pb-xs">Menu Utama</p>
@@ -133,18 +127,18 @@
                     report_problem
                 </span>
                 <span class="text-[13px] font-medium leading-none">Laporan Insiden</span>
-                <!-- Badge notif contoh -->
-                @if(!request()->routeIs('incidents.*'))
-                <span class="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-red-100 text-red-600 rounded-full leading-none">1</span>
-                @endif
+               
             </a>
 
+            @if(auth()->check() && auth()->user()->canManageMasterData())
             <!-- Section Label -->
             <p class="text-[10px] font-bold text-secondary/60 uppercase tracking-[0.12em] px-sm pt-sm pb-xs">Guard Management</p>
 
             <!-- Guard Management Accordion -->
-            <div x-data="{ open: {{ request()->routeIs('patrol-schedules.*') || request()->routeIs('areas.*') || request()->routeIs('guards.*') || request()->routeIs('shifts.*') ? 'true' : 'false' }} }">
+            <div x-data="{ open: {{ request()->routeIs('patrol-schedules.*', 'areas.*', 'petugas.*', 'shifts.*') ? 'true' : 'false' }} }">
                 <button @click="open = !open"
+                    :aria-expanded="open.toString()"
+                    aria-controls="guard-management-menu"
                     class="w-full flex items-center gap-sm px-sm py-[9px] rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all duration-200"
                     :class="open ? 'bg-surface-container text-on-surface font-medium' : ''">
                     <span class="material-symbols-outlined text-[20px] flex-shrink-0" :style="open ? 'font-variation-settings: \'FILL\' 1;' : ''">group</span>
@@ -153,14 +147,10 @@
                 </button>
 
                 <!-- Sub-items -->
-                <div x-show="open"
-                     x-transition:enter="transition ease-out duration-200"
-                     x-transition:enter-start="opacity-0 -translate-y-1"
-                     x-transition:enter-end="opacity-100 translate-y-0"
-                     x-transition:leave="transition ease-in duration-150"
-                     x-transition:leave-start="opacity-100 translate-y-0"
-                     x-transition:leave-end="opacity-0 -translate-y-1"
-                     class="mt-xs pl-[30px] space-y-[2px]">
+                <div id="guard-management-menu"
+                     x-cloak
+                     class="sub-menu mt-xs pl-[30px] space-y-[2px]"
+                     :class="{ 'open': open }">
 
                     <a href="{{ route('patrol-schedules.index') }}"
                        class="flex items-center gap-sm px-sm py-[7px] rounded-lg text-[12px] transition-all duration-150
@@ -191,6 +181,7 @@
                     </a>
                 </div>
             </div>
+            @endif
 
             <!-- Section Label -->
             <p class="text-[10px] font-bold text-secondary/60 uppercase tracking-[0.12em] px-sm pt-sm pb-xs">Sistem</p>
@@ -236,6 +227,12 @@
         <!-- TopNavBar -->
         <header class="flex justify-between items-center px-gutter w-full sticky top-0 z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant/70 h-16 flex-shrink-0">
             <div class="md:hidden flex items-center gap-sm">
+                <button type="button" @click="sidebarOpen = true"
+                        x-ref="menuButton"
+                        class="cc-toggle p-xs text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"
+                        aria-label="Buka menu" :aria-expanded="sidebarOpen.toString()">
+                    <span class="material-symbols-outlined text-[28px]">menu</span>
+                </button>
                 <h1 class="text-headline-md font-headline-md font-bold text-primary">Sentinel Guard Systems</h1>
             </div>
             <div class="hidden md:flex items-center gap-sm flex-1 max-w-md">
@@ -267,7 +264,9 @@
         </header>
 
         <!-- Scrollable Content Canvas -->
-        <main class="flex-1 overflow-y-auto p-gutter lg:p-[32px] bg-transparent">
+        <main class="flex-1 overflow-y-auto p-gutter lg:p-[32px] bg-transparent"
+              :style="(sidebarOpen && window.innerWidth < 768) ? 'overflow-y: hidden' : ''">
+            <x-impersonation-banner />
             {{ $slot }}
         </main>
     </div>

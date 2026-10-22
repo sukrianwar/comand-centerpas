@@ -6,17 +6,20 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', User::class);
+
         $query = User::with('role')
-            ->select('id', 'role_id', 'name', 'username', 'email', 'status', 'created_at')
+            ->select('id', 'role_id', 'name', 'username', 'email', 'phone', 'status', 'created_at')
             ->orderBy('name', 'asc');
 
         if ($request->filled('search')) {
@@ -43,34 +46,25 @@ class UserController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', User::class);
+
         $roles = Role::select('id', 'role_name')->get();
         return view('petugas.create', compact('roles'));
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
-        $data = $request->validated();
-        
-        // Hash password
-        $data['password'] = Hash::make($data['password']);
-
-        // Exclude password_confirmation happens automatically from validated() since it's not a rule
-        // wait, validated() returns fields that are validated, so password_confirmation is excluded automatically.
-
-        $user = User::create($data);
+        $user = User::create($request->validated());
 
         return redirect()
             ->route('petugas.index')
             ->with('success', "Akun petugas \"{$user->name}\" berhasil dibuat.");
     }
 
-    public function show(User $petuga): RedirectResponse
-    {
-        return redirect()->route('petugas.edit', $petuga);
-    }
-
     public function edit(User $petuga): View
     {
+        $this->authorize('update', $petuga);
+
         $roles = Role::select('id', 'role_name')->get();
         return view('petugas.edit', ['user' => $petuga, 'roles' => $roles]);
     }
@@ -80,10 +74,7 @@ class UserController extends Controller
         $data = $request->validated();
 
         if (empty($data['password'])) {
-            // Hilangkan dari array agar tidak terupdate
             unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
         }
 
         $petuga->update($data);
@@ -95,11 +86,20 @@ class UserController extends Controller
 
     public function destroy(User $petuga): RedirectResponse
     {
+        $this->authorize('delete', $petuga);
+
         if (auth()->id() === $petuga->id) {
             return redirect()
                 ->back()
                 ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
+
+        $suffix = '#deleted-' . $petuga->id;
+
+        $petuga->update([
+            'username' => Str::limit($petuga->username, 100 - strlen($suffix), '') . $suffix,
+            'email' => null,
+        ]);
 
         $petuga->delete();
 
@@ -108,8 +108,9 @@ class UserController extends Controller
             ->with('success', "Akun petugas berhasil dihapus.");
     }
 
-    public function toggleStatus(User $petuga)
+    public function toggleStatus(User $petuga): JsonResponse
     {
+        $this->authorize('toggleStatus', $petuga);
         // Cegah user menonaktifkan akunnya sendiri
         if (auth()->id() === $petuga->id) {
             return response()->json([

@@ -8,7 +8,7 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->canManageMasterData() ?? false;
     }
 
     public function rules(): array
@@ -17,6 +17,7 @@ class StoreUserRequest extends FormRequest
             'name'     => ['required', 'string', 'max:150'],
             'username' => ['required', 'string', 'max:100', 'unique:users,username'],
             'email'    => ['nullable', 'email', 'max:150', 'unique:users,email'],
+            'phone'    => ['nullable', 'string', 'max:30'],
             'role_id'  => ['required', 'exists:roles,id'],
             'status'   => ['required', 'in:active,inactive'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],

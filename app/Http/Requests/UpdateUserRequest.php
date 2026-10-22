@@ -9,7 +9,7 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->canManageMasterData() ?? false;
     }
 
     public function rules(): array
@@ -35,6 +35,7 @@ class UpdateUserRequest extends FormRequest
                 'max:150', 
                 Rule::unique('users', 'email')->ignore($user)
             ],
+            'phone'    => ['nullable', 'string', 'max:30'],
             'role_id'  => ['required', 'exists:roles,id'],
             'status'   => ['required', 'in:active,inactive'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],

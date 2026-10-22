@@ -106,7 +106,7 @@
         <!-- Quick Action Grid -->
         <div>
             <h3 class="text-title-lg font-bold text-on-surface mb-md">Aksi Cepat</h3>
-            <div class="grid grid-cols-2 md:grid-cols-2 gap-md">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-md">
                 <!-- Riwayat Patroli -->
                 <a href="{{ route('member.riwayat') }}" class="bg-surface border border-outline-variant rounded-2xl p-lg flex flex-col items-center justify-center gap-md hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/10 transition-all group active:scale-95">
                     <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -122,6 +122,15 @@
                     </div>
                     <span class="text-body-lg font-bold text-on-surface text-center">Semua<br>Jadwal</span>
                 </a>
+
+                <!-- Lapor Insiden -->
+                <button type="button" @click="$dispatch('open-incident-modal')"
+                        class="bg-surface border border-outline-variant rounded-2xl p-lg flex flex-col items-center justify-center gap-md hover:border-red-500 hover:shadow-lg hover:shadow-red-500/10 transition-all group active:scale-95">
+                    <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <span class="material-symbols-outlined text-[32px]">report_problem</span>
+                    </div>
+                    <span class="text-body-lg font-bold text-on-surface text-center">Lapor<br>Insiden</span>
+                </button>
             </div>
         </div>
 

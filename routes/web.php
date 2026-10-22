@@ -3,8 +3,10 @@
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\CheckpointController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MemberDashboardController;
+use App\Http\Controllers\MemberIncidentController;
 use App\Http\Controllers\PatrolLogController;
 use App\Http\Controllers\PatrolScheduleController;
 use App\Http\Controllers\ProfileController;
@@ -28,11 +30,6 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
     Route::get('/incidents', [IncidentController::class, 'index'])
         ->name('incidents.index');
 
-    // Guards (placeholder view)
-    Route::get('/guards', function () {
-        return view('guards.index');
-    })->name('guards.index');
-
     Route::get('/settings', function () {
         return view('settings.index');
     })->name('settings.index');
@@ -52,8 +49,11 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
     // Petugas (Users)
     Route::patch('petugas/{petuga}/toggle-status', [UserController::class, 'toggleStatus'])
         ->name('petugas.toggle-status');
+    Route::post('petugas/{petuga}/impersonate', [ImpersonationController::class, 'store'])
+        ->name('petugas.impersonate');
     Route::resource('petugas', UserController::class)
-        ->parameters(['petugas' => 'petuga']);
+        ->parameters(['petugas' => 'petuga'])
+        ->except(['show']);
 });
 
 // ══ Member Area — semua role yang sudah login boleh masuk ════════════════════
@@ -72,6 +72,10 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
     Route::post('/member/patrol/scan', [PatrolLogController::class, 'store'])
         ->name('member.patrol.scan');
 
+    // Laporan insiden/temuan dari portal member
+    Route::post('/member/incidents', [MemberIncidentController::class, 'store'])
+        ->name('member.incidents.store');
+
     // ── Riwayat scan ────────────────────────────────────────────────────────
     Route::get('/member/riwayat', [PatrolLogController::class, 'index'])
         ->name('member.riwayat');
@@ -84,6 +88,10 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
 
 // ══ Profile (Breeze) — semua role yang sudah login ═══════════════════════════
 Route::middleware('auth')->group(function () {
+    // Harus di luar restrict.guard agar Security Guard hasil impersonasi bisa kembali.
+    Route::post('impersonation/stop', [ImpersonationController::class, 'destroy'])
+        ->name('impersonation.stop');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
