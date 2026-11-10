@@ -10,8 +10,8 @@ use App\Models\PatrolSchedule;
 use App\Models\Shift;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 
 class PatrolScheduleController extends Controller
 {
@@ -22,7 +22,7 @@ class PatrolScheduleController extends Controller
     {
         Gate::authorize('viewAny', PatrolSchedule::class);
 
-        $query = PatrolSchedule::with(['area', 'shift', 'checkpoints'])
+        $query = PatrolSchedule::with(['area', 'shiftMaster', 'checkpoints'])
             ->orderBy('created_at', 'desc')
             ->orderBy('start_time', 'asc');
 
@@ -46,7 +46,7 @@ class PatrolScheduleController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('schedule_name', 'like', "%{$search}%")
-                  ->orWhereHas('area', fn ($q) => $q->where('area_name', 'like', "%{$search}%"));
+                    ->orWhereHas('area', fn ($q) => $q->where('area_name', 'like', "%{$search}%"));
             });
         }
 
@@ -55,7 +55,7 @@ class PatrolScheduleController extends Controller
 
         // ── Statistik card (query terpisah agar tidak terpengaruh filter) ───
         $stats = [
-            'total'  => PatrolSchedule::count(),
+            'total' => PatrolSchedule::count(),
         ];
         $shiftStats = Shift::withCount('patrolSchedules')
             ->orderBy('start_time')
@@ -75,14 +75,14 @@ class PatrolScheduleController extends Controller
     {
         Gate::authorize('create', PatrolSchedule::class);
 
-        $areas       = Area::orderBy('area_name')->get(['id', 'area_name', 'area_code']);
+        $areas = Area::orderBy('area_name')->get(['id', 'area_name', 'area_code']);
         $checkpoints = Checkpoint::where('status', 'active')
-                                 ->with('area:id,area_name')
-                                 ->orderBy('checkpoint_name')
-                                 ->get(['id', 'checkpoint_name', 'area_id']);
-        $shifts      = Shift::active()
-                                 ->orderBy('start_time')
-                                 ->get(['id', 'shift_name', 'start_time', 'end_time']);
+            ->with('area:id,area_name')
+            ->orderBy('checkpoint_name')
+            ->get(['id', 'checkpoint_name', 'area_id']);
+        $shifts = Shift::active()
+            ->orderBy('start_time')
+            ->get(['id', 'shift_name', 'start_time', 'end_time']);
 
         return view('patrol-schedules.create', compact('areas', 'checkpoints', 'shifts'));
     }
@@ -121,6 +121,7 @@ class PatrolScheduleController extends Controller
     public function show(PatrolSchedule $patrolSchedule): RedirectResponse
     {
         Gate::authorize('view', $patrolSchedule);
+
         return redirect()->route('patrol-schedules.edit', $patrolSchedule);
     }
 
@@ -134,17 +135,17 @@ class PatrolScheduleController extends Controller
         // Load relasi yang dibutuhkan form edit (termasuk pivot sequence_number)
         $patrolSchedule->load(['area', 'checkpoints']);
 
-        $areas       = Area::orderBy('area_name')->get(['id', 'area_name', 'area_code']);
+        $areas = Area::orderBy('area_name')->get(['id', 'area_name', 'area_code']);
         $checkpoints = Checkpoint::where('status', 'active')
-                                 ->with('area:id,area_name')
-                                 ->orderBy('checkpoint_name')
-                                 ->get(['id', 'checkpoint_name', 'area_id']);
+            ->with('area:id,area_name')
+            ->orderBy('checkpoint_name')
+            ->get(['id', 'checkpoint_name', 'area_id']);
 
         // Tampilkan shift aktif + shift yang sedang dipakai jadwal ini
         // (agar jadwal lama yang shift-nya nonaktif tetap bisa disimpan).
         $shifts = Shift::where(function ($q) use ($patrolSchedule) {
             $q->where('status', 'active')
-              ->orWhere('id', $patrolSchedule->shift_id);
+                ->orWhere('id', $patrolSchedule->shift_id);
         })
             ->orderBy('start_time')
             ->get(['id', 'shift_name', 'start_time', 'end_time', 'status']);
@@ -209,7 +210,7 @@ class PatrolScheduleController extends Controller
      */
     private function buildScheduleName(int|string $areaId, int|string $shiftId, int|string $roundNumber): string
     {
-        $area  = Area::find($areaId);
+        $area = Area::find($areaId);
         $shift = Shift::find($shiftId);
 
         $name = sprintf(

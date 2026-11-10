@@ -13,7 +13,9 @@ class IncidentController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Incident::with(['user', 'area', 'statusHistory.user'])
+        $this->authorize('viewAny', Incident::class);
+
+        $query = Incident::with(['user', 'area', 'photos', 'statusHistory.user'])
             ->orderByDesc('reported_at');
 
         // ── Pencarian (judul, nama pelapor) ─────────────────────────────────
@@ -21,7 +23,7 @@ class IncidentController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('user', fn ($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -49,11 +51,11 @@ class IncidentController extends Controller
 
         // ── Statistik card (query terpisah agar tidak terpengaruh filter) ───
         $stats = [
-            'total'     => Incident::count(),
-            'new'       => Incident::where('status', 'new')->count(),
+            'total' => Incident::count(),
+            'new' => Incident::where('status', 'new')->count(),
             'in_review' => Incident::where('status', 'in_review')->count(),
             'follow_up' => Incident::where('status', 'follow_up_required')->count(),
-            'closed'    => Incident::where('status', 'closed')->count(),
+            'closed' => Incident::where('status', 'closed')->count(),
         ];
 
         return view('incidents.index', compact('incidents', 'stats'));

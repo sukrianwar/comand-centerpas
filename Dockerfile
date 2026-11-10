@@ -20,6 +20,11 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
+# Apply PHP configuration (upload limits, timezone).
+# Di dev sengaja tidak memakai opcache.ini produksi (validate_timestamps=0)
+# agar perubahan PHP/Blade langsung terlihat tanpa restart container.
+COPY docker/php/conf.d/php.ini /usr/local/etc/php/conf.d/php.ini
+
 # Set working directory
 WORKDIR /var/www
 

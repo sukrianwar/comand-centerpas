@@ -144,3 +144,109 @@
 .animate-modal-pop {
     animation: modal-pop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* ── Smooth page navigation (multi-page, tanpa SPA) ─────────────── */
+@view-transition {
+    navigation: auto;
+}
+
+aside.cc-sidebar {
+    view-transition-name: cc-sidebar;
+}
+
+header.cc-topbar {
+    view-transition-name: cc-topbar;
+}
+
+main.cc-content {
+    view-transition-name: cc-content;
+}
+
+/* Sidebar & topbar identik antar halaman — biarkan diam tanpa animasi. */
+::view-transition-group(cc-sidebar),
+::view-transition-group(cc-topbar) {
+    animation: none;
+}
+
+::view-transition-old(cc-content) {
+    animation: cc-content-out 0.15s ease both;
+}
+
+::view-transition-new(cc-content) {
+    animation: cc-content-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes cc-content-out {
+    to {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+}
+
+@keyframes cc-content-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fallback untuk browser tanpa View Transitions API. */
+@supports not (view-transition-name: none) {
+    .cc-content {
+        animation: cc-content-in 0.18s ease both;
+    }
+}
+
+/* Highlight instan pada link sidebar yang baru diklik (sebelum reload). */
+.cc-nav-pending {
+    background-color: #0a1422;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(10, 20, 34, 0.2);
+}
+
+/* Progress bar tipis saat navigasi. */
+#cc-progress {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 9999;
+    width: 0;
+    height: 2px;
+    pointer-events: none;
+    opacity: 0;
+    background: #0a1422;
+    box-shadow: 0 0 8px rgba(10, 20, 34, 0.45);
+    transition:
+        width 0.2s ease,
+        opacity 0.15s ease;
+}
+
+#cc-progress.cc-active {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition {
+        navigation: none;
+    }
+
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
+
+    .cc-content {
+        animation: none !important;
+    }
+
+    #cc-progress {
+        transition: none;
+    }
+}

@@ -7,6 +7,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\MemberDashboardController;
 use App\Http\Controllers\MemberIncidentController;
+use App\Http\Controllers\PatrolHistoryController;
 use App\Http\Controllers\PatrolLogController;
 use App\Http\Controllers\PatrolScheduleController;
 use App\Http\Controllers\ProfileController;
@@ -29,6 +30,12 @@ Route::middleware(['auth', 'restrict.guard'])->group(function () {
     // Incidents
     Route::get('/incidents', [IncidentController::class, 'index'])
         ->name('incidents.index');
+
+    // Riwayat patroli & export monitoring
+    Route::get('/patrol-history', [PatrolHistoryController::class, 'index'])
+        ->name('patrol-history.index');
+    Route::get('/patrol-history/export', [PatrolHistoryController::class, 'export'])
+        ->name('patrol-history.export');
 
     Route::get('/settings', function () {
         return view('settings.index');

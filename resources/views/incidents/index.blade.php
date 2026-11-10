@@ -42,7 +42,18 @@
             'coords'         => $i->latitude !== null && $i->longitude !== null
                 ? trim($i->latitude) . ', ' . trim($i->longitude)
                 : null,
-            'photo_url'      => $i->photo ? \Illuminate\Support\Facades\Storage::disk('public')->url($i->photo) : null,
+            'photo_urls'     => (function () use ($i) {
+                $paths = $i->photos->pluck('photo_path')->filter()->all();
+
+                if ($paths === [] && $i->photo) {
+                    $paths = [$i->photo];
+                }
+
+                return array_map(
+                    fn (string $path) => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
+                    $paths
+                );
+            })(),
             'status_label'   => $st['label'],
             'status_class'   => $st['class'],
             'priority_label' => $pr['label'],
@@ -353,12 +364,16 @@
                 </div>
 
                 <!-- Bukti Foto -->
-                <div x-show="detail && detail.photo_url">
+                <div x-show="detail && detail.photo_urls && detail.photo_urls.length">
                     <p class="text-label-md font-label-md text-secondary mb-xs">Bukti Foto</p>
-                    <template x-if="detail && detail.photo_url">
-                        <img :src="detail.photo_url" alt="Bukti foto insiden"
-                             class="w-48 h-48 object-cover rounded-lg border border-outline-variant">
-                    </template>
+                    <div class="grid grid-cols-2 gap-sm sm:grid-cols-3">
+                        <template x-for="(url, index) in (detail ? detail.photo_urls : [])" :key="index">
+                            <a :href="url" target="_blank" rel="noopener">
+                                <img :src="url" alt="Bukti foto insiden"
+                                     class="h-36 w-full rounded-lg border border-outline-variant object-cover">
+                            </a>
+                        </template>
+                    </div>
                 </div>
 
                 <!-- Timeline / Lifecycle -->

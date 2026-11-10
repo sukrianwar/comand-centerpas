@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Area;
+use App\Models\Incident;
 use App\Models\PatrolSchedule;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -39,6 +40,15 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('layouts.member', function ($view) {
+            if (! auth()->user()?->can('create', Incident::class)) {
+                $view->with([
+                    'reportAreas' => [],
+                    'suggestedAreaId' => null,
+                ]);
+
+                return;
+            }
+
             $areas = Area::orderBy('area_name')
                 ->get(['id', 'area_name'])
                 ->map(fn ($area) => [

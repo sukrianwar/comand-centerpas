@@ -17,18 +17,24 @@ class MemberIncidentController extends Controller
      */
     public function store(StoreIncidentRequest $request): JsonResponse
     {
+        $this->authorize('create', Incident::class);
+
         $validated = $request->validated();
-        $photoPath = $request->file('photo')->store('incident-photos', 'public');
+        $storedPaths = [];
 
         try {
-            $incident = DB::transaction(function () use ($request, $validated, $photoPath) {
+            $incident = DB::transaction(function () use ($request, $validated, &$storedPaths) {
+                foreach ($request->file('photos') as $photo) {
+                    $storedPaths[] = $photo->store('incident-photos', 'public');
+                }
+
                 $incident = Incident::create([
                     'user_id' => $request->user()->id,
                     'area_id' => $validated['area_id'],
                     'title' => $validated['title'],
                     'category' => $validated['category'],
                     'description' => $validated['description'],
-                    'photo' => $photoPath,
+                    'photo' => $storedPaths[0],
                     'latitude' => $validated['latitude'] ?? null,
                     'longitude' => $validated['longitude'] ?? null,
                     'priority' => $validated['priority'],
@@ -36,6 +42,10 @@ class MemberIncidentController extends Controller
                     'sync_status' => 'synced',
                     'reported_at' => now(),
                 ]);
+
+                $incident->photos()->createMany(
+                    array_map(fn (string $path) => ['photo_path' => $path], $storedPaths)
+                );
 
                 IncidentStatusHistory::create([
                     'incident_id' => $incident->id,
@@ -48,7 +58,9 @@ class MemberIncidentController extends Controller
                 return $incident;
             });
         } catch (Throwable $exception) {
-            Storage::disk('public')->delete($photoPath);
+            if ($storedPaths !== []) {
+                Storage::disk('public')->delete($storedPaths);
+            }
 
             throw $exception;
         }

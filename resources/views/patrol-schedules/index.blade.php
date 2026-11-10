@@ -123,9 +123,9 @@
 
                     {{-- Shift Badge --}}
                     <td class="py-sm px-md">
-                        @if($schedule->shift)
+                        @if($schedule->shiftMaster)
                             <span class="inline-flex items-center gap-xs px-2 py-1 bg-primary/10 text-primary text-label-md font-label-md rounded-full border border-primary/20">
-                                <span class="material-symbols-outlined text-[14px]">schedule</span> {{ $schedule->shift->shift_name }}
+                                <span class="material-symbols-outlined text-[14px]">schedule</span> {{ $schedule->shiftMaster->shift_name }}
                             </span>
                         @else
                             <span class="text-secondary">-</span>
@@ -325,7 +325,7 @@
             'id'          => $schedule->id,
             'name'        => $schedule->schedule_name,
             'area'        => $schedule->area?->area_name ?? '-',
-            'shift'       => $schedule->shift?->shift_name ?? '-',
+            'shift'       => $schedule->shiftMaster?->shift_name ?? '-',
             'round'       => $schedule->round_number,
             'start_time'  => \Carbon\Carbon::parse($schedule->start_time)->format('H:i'),
             'end_time'    => \Carbon\Carbon::parse($schedule->end_time)->format('H:i'),

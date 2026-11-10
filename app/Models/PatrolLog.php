@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PatrolLog extends Model
 {
@@ -33,6 +34,11 @@ class PatrolLog extends Model
     public function checkpoint(): BelongsTo
     {
         return $this->belongsTo(Checkpoint::class, 'checkpoint_id');
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(PatrolLogPhoto::class, 'patrol_log_id')->orderBy('id');
     }
 
     public function user(): BelongsTo

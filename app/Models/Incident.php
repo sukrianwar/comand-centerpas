@@ -31,35 +31,35 @@ class Incident extends Model
     ];
 
     protected $casts = [
-        'latitude'    => 'decimal:7',
-        'longitude'   => 'decimal:7',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
         'reported_at' => 'datetime',
         'approved_at' => 'datetime',
     ];
 
     public const CATEGORIES = [
-        'kebakaran'          => 'Kebakaran',
-        'kebocoran'          => 'Kebocoran',
+        'kebakaran' => 'Kebakaran',
+        'kebocoran' => 'Kebocoran',
         'orang_mencurigakan' => 'Orang Mencurigakan',
-        'kerusakan'          => 'Kerusakan',
-        'kecelakaan'         => 'Kecelakaan',
-        'lainnya'            => 'Lainnya',
+        'kerusakan' => 'Kerusakan',
+        'kecelakaan' => 'Kecelakaan',
+        'lainnya' => 'Lainnya',
     ];
 
     public const STATUSES = [
-        'new'                 => 'New',
-        'in_review'           => 'In Review',
-        'approved'            => 'Approved',
-        'rejected'            => 'Rejected',
-        'follow_up_required'  => 'Follow-up Required',
-        'closed'              => 'Closed',
+        'new' => 'New',
+        'in_review' => 'In Review',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+        'follow_up_required' => 'Follow-up Required',
+        'closed' => 'Closed',
     ];
 
     public const PRIORITIES = [
         'critical' => 'Critical',
-        'high'     => 'High',
-        'medium'   => 'Medium',
-        'low'      => 'Low',
+        'high' => 'High',
+        'medium' => 'Medium',
+        'low' => 'Low',
     ];
 
     // ─── Relasi ──────────────────────────────────────────────────────────────
@@ -99,5 +99,13 @@ class Incident extends Model
     public function statusHistory(): HasMany
     {
         return $this->hasMany(IncidentStatusHistory::class, 'incident_id');
+    }
+
+    /**
+     * Foto bukti dokumentasi insiden.
+     */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(IncidentPhoto::class, 'incident_id')->orderBy('id');
     }
 }

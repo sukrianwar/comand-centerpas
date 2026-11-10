@@ -9,8 +9,10 @@ use App\Models\PatrolSchedule;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Throwable;
 
 class PatrolLogController extends Controller
 {
@@ -114,27 +116,48 @@ class PatrolLogController extends Controller
             ], 422);
         }
 
-        // 5. Simpan foto ke storage/app/public/patrol-photos/
-        $photoPath = $request->file('photo')->store('patrol-photos', 'public');
+        // 5. Simpan seluruh foto bukti (minimal 3, maksimal 5) ke
+        //    storage/app/public/patrol-photos/
+        $storedPaths = [];
 
-        // 6. Status. Pencatatan hanya lolos bila jadwal 'ongoing' (selalu aktif)
-        //    atau 'scheduled' yang masih di dalam window jam aktifnya (lihat
-        //    langkah 2). Karena di luar window sudah ditolak, semua catatan
-        //    yang tersimpan di sini selalu tepat waktu ('on_time').
-        //    Nilai enum 'late' disediakan untuk kebutuhan sistem lain (mis. impor
-        //    data historis) dan tidak dipakai oleh alur pencatatan saat ini.
-        $status = 'on_time';
+        try {
+            $log = DB::transaction(function () use ($request, $schedule, $checkpoint, $user, $now, &$storedPaths) {
+                foreach ($request->file('photos') as $photo) {
+                    $storedPaths[] = $photo->store('patrol-photos', 'public');
+                }
 
-        // 7. Simpan PatrolLog
-        $log = PatrolLog::create([
-            'patrol_schedule_id' => $schedule->id,
-            'checkpoint_id' => $checkpoint->id,
-            'user_id' => $user->id,
-            'scanned_at' => $now,
-            'photo_path' => $photoPath,
-            'status' => $status,
-            'notes' => $request->notes,
-        ]);
+                // 6. Status. Pencatatan hanya lolos bila jadwal 'ongoing' (selalu aktif)
+                //    atau 'scheduled' yang masih di dalam window jam aktifnya (lihat
+                //    langkah 2). Karena di luar window sudah ditolak, semua catatan
+                //    yang tersimpan di sini selalu tepat waktu ('on_time').
+                //    Nilai enum 'late' disediakan untuk kebutuhan sistem lain (mis. impor
+                //    data historis) dan tidak dipakai oleh alur pencatatan saat ini.
+                $log = PatrolLog::create([
+                    'patrol_schedule_id' => $schedule->id,
+                    'checkpoint_id' => $checkpoint->id,
+                    'user_id' => $user->id,
+                    'scanned_at' => $now,
+                    'photo_path' => $storedPaths[0],
+                    'status' => 'on_time',
+                    'notes' => $request->notes,
+                ]);
+
+                // 7. Simpan semua foto ke tabel relasi patrol_log_photos
+                $log->photos()->createMany(
+                    array_map(fn (string $path) => ['photo_path' => $path], $storedPaths)
+                );
+
+                return $log;
+            });
+        } catch (Throwable $exception) {
+            if ($storedPaths !== []) {
+                Storage::disk('public')->delete($storedPaths);
+            }
+
+            throw $exception;
+        }
+
+        $status = $log->status;
 
         // 8. Hitung progress terkini: berapa checkpoint sudah dicatat hari ini
         //    oleh petugas ini di jadwal ini
@@ -157,7 +180,10 @@ class PatrolLogController extends Controller
             'total_checkpoints' => $totalCheckpoints,
             'scanned_ids' => $scannedIds,
             'is_complete' => $isComplete,
-            'photo_url' => Storage::disk('public')->url($photoPath),
+            'photo_urls' => array_map(
+                fn (string $path) => Storage::disk('public')->url($path),
+                $storedPaths
+            ),
         ]);
     }
 

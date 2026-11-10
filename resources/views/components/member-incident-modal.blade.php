@@ -165,27 +165,50 @@
                         Foto Bukti <span class="text-red-500">*</span>
                     </span>
 
-                    <template x-if="photoPreview">
-                        <div class="relative mb-sm inline-block">
-                            <img :src="photoPreview" alt="Preview foto bukti"
-                                 class="h-36 w-36 rounded-xl border border-outline-variant object-cover">
-                            <button type="button" @click="clearPhoto()"
-                                    class="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md"
-                                    aria-label="Hapus foto">
-                                <span class="material-symbols-outlined text-[16px]">close</span>
-                            </button>
+                    <p class="mb-xs text-[11px] text-secondary">
+                        Wajib 3–5 foto. Format JPEG/PNG/WebP, maksimal 5 MB per foto.
+                        (<span class="font-bold text-on-surface" x-text="`${photos.length}/5`"></span>)
+                    </p>
+
+                    <template x-if="photoPreviews.length > 0">
+                        <div class="mb-sm grid grid-cols-3 gap-sm">
+                            <template x-for="(preview, index) in photoPreviews" :key="preview.url">
+                                <div class="relative">
+                                    <img :src="preview.url" alt="Preview foto bukti"
+                                         class="aspect-square w-full rounded-xl border border-outline-variant object-cover">
+                                    <button type="button" @click="removePhoto(index)" :disabled="isSubmitting"
+                                            class="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md disabled:opacity-50"
+                                            aria-label="Hapus foto">
+                                        <span class="material-symbols-outlined text-[16px]">close</span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </template>
 
-                    <label class="inline-flex cursor-pointer items-center gap-sm rounded-xl border border-outline-variant bg-surface-container-lowest px-sm py-xs text-body-sm font-semibold text-on-surface transition-colors hover:bg-surface-container">
-                        <span class="material-symbols-outlined text-[20px] text-primary">photo_camera</span>
-                        <span x-text="photoName ? 'Ganti Foto' : 'Ambil / Pilih Foto'"></span>
-                        <input x-ref="photoInput" type="file" name="photo"
-                               accept="image/jpeg,image/png,image/webp"
-                               class="hidden" @change="onPhotoSelected($event)">
-                    </label>
-                    <p class="mt-1 text-[11px] text-secondary">Wajib. Format JPEG/PNG/WebP, maksimal 5 MB.</p>
-                    <p x-show="errors.photo" x-text="errors.photo?.[0]" class="mt-1 text-[11px] text-red-600"></p>
+                    <div class="flex flex-wrap gap-sm">
+                        <label class="inline-flex cursor-pointer items-center gap-sm rounded-xl border border-outline-variant bg-surface-container-lowest px-sm py-xs text-body-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                               :class="photos.length >= MAX_PHOTOS ? 'opacity-50 pointer-events-none' : ''">
+                            <span class="material-symbols-outlined text-[20px] text-primary">photo_camera</span>
+                            <span x-text="photos.length ? 'Tambah Foto' : 'Ambil Foto'"></span>
+                            <input type="file" accept="image/jpeg,image/png,image/webp"
+                                   capture="environment" multiple
+                                   class="hidden" @change="onPhotosSelected($event)">
+                        </label>
+                        <label class="inline-flex cursor-pointer items-center gap-sm rounded-xl border border-outline-variant bg-surface-container-lowest px-sm py-xs text-body-sm font-semibold text-on-surface transition-colors hover:bg-surface-container"
+                               :class="photos.length >= MAX_PHOTOS ? 'opacity-50 pointer-events-none' : ''">
+                            <span class="material-symbols-outlined text-[20px] text-primary">photo_library</span>
+                            <span>Pilih dari Galeri</span>
+                            <input type="file" accept="image/jpeg,image/png,image/webp" multiple
+                                   class="hidden" @change="onPhotosSelected($event)">
+                        </label>
+                    </div>
+
+                    <p x-show="photos.length > 0 && photos.length < MIN_PHOTOS"
+                       class="mt-1 text-[11px] font-semibold text-amber-700">
+                        Kurang <span x-text="MIN_PHOTOS - photos.length"></span> foto lagi (minimal 3).
+                    </p>
+                    <p x-show="errors.photos" x-text="errors.photos?.[0]" class="mt-1 text-[11px] text-red-600"></p>
                 </div>
 
             </div>
@@ -226,8 +249,10 @@ window.memberIncidentForm = function (areas, suggestedAreaId) {
         errors: {},
         generalError: '',
         success: null,
-        photoPreview: null,
-        photoName: '',
+        MIN_PHOTOS: 3,
+        MAX_PHOTOS: 5,
+        photos: [],
+        photoPreviews: [],
         lastFocused: null,
         mainOverflow: '',
 
@@ -259,7 +284,7 @@ window.memberIncidentForm = function (areas, suggestedAreaId) {
             this.errors = {};
             this.generalError = '';
             this.success = null;
-            this.clearPhoto();
+            this.clearPhotos();
         },
 
         resetForAnother() {
@@ -267,47 +292,60 @@ window.memberIncidentForm = function (areas, suggestedAreaId) {
             this.$nextTick(() => this.$refs.titleInput?.focus());
         },
 
-        clearPhoto() {
-            if (this.photoPreview) {
-                URL.revokeObjectURL(this.photoPreview);
-            }
-
-            this.photoPreview = null;
-            this.photoName = '';
-
-            if (this.$refs.photoInput) {
-                this.$refs.photoInput.value = '';
-            }
+        clearPhotos() {
+            this.photoPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+            this.photos = [];
+            this.photoPreviews = [];
         },
 
-        onPhotoSelected(event) {
-            const file = event.target.files?.[0];
+        onPhotosSelected(event) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
 
-            if (!file) {
-                this.clearPhoto();
-                return;
+            const remaining = Math.max(this.MAX_PHOTOS - this.photos.length, 0);
+            const accepted = files.slice(0, remaining);
+
+            accepted.forEach((file) => {
+                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    this.errors = { ...this.errors, photos: ['Ukuran tiap foto maksimal 5 MB.'] };
+                    return;
+                }
+
+                this.photos.push(file);
+                this.photoPreviews.push({
+                    url: URL.createObjectURL(file),
+                    name: file.name,
+                });
+            });
+
+            if (files.length > remaining) {
+                this.errors = { ...this.errors, photos: [`Foto bukti maksimal ${this.MAX_PHOTOS} foto.`] };
+            } else {
+                this.errors = Object.fromEntries(
+                    Object.entries(this.errors).filter(([key]) => key !== 'photos')
+                );
             }
 
-            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                this.clearPhoto();
-                this.errors = { ...this.errors, photo: ['Format foto harus JPEG, PNG, atau WebP.'] };
-                return;
+            // Reset input agar file yang sama bisa dipilih lagi.
+            event.target.value = '';
+        },
+
+        removePhoto(index) {
+            if (this.isSubmitting) return;
+
+            const preview = this.photoPreviews[index];
+            if (preview) {
+                URL.revokeObjectURL(preview.url);
             }
 
-            if (file.size > 5 * 1024 * 1024) {
-                this.clearPhoto();
-                this.errors = { ...this.errors, photo: ['Ukuran foto maksimal 5 MB.'] };
-                return;
-            }
-
-            if (this.photoPreview) {
-                URL.revokeObjectURL(this.photoPreview);
-            }
-
-            this.photoPreview = URL.createObjectURL(file);
-            this.photoName = file.name;
+            this.photos.splice(index, 1);
+            this.photoPreviews.splice(index, 1);
             this.errors = Object.fromEntries(
-                Object.entries(this.errors).filter(([key]) => key !== 'photo')
+                Object.entries(this.errors).filter(([key]) => key !== 'photos')
             );
         },
 
@@ -319,14 +357,24 @@ window.memberIncidentForm = function (areas, suggestedAreaId) {
             this.generalError = '';
             this.errors = {};
 
-            if (!this.$refs.photoInput?.files?.length) {
-                this.errors = { ...this.errors, photo: ['Foto bukti wajib diunggah.'] };
+            if (this.photos.length < this.MIN_PHOTOS) {
+                this.errors = { ...this.errors, photos: [`Foto bukti minimal ${this.MIN_PHOTOS} foto.`] };
+                this.generalError = 'Periksa kembali isian laporan.';
+                this.scrollToTop();
+                return;
+            }
+
+            if (this.photos.length > this.MAX_PHOTOS) {
+                this.errors = { ...this.errors, photos: [`Foto bukti maksimal ${this.MAX_PHOTOS} foto.`] };
                 this.generalError = 'Periksa kembali isian laporan.';
                 this.scrollToTop();
                 return;
             }
 
             this.isSubmitting = true;
+
+            const formData = new FormData(this.$refs.form);
+            this.photos.forEach((photo) => formData.append('photos[]', photo));
 
             try {
                 const response = await fetch('{{ route('member.incidents.store') }}', {
@@ -335,7 +383,7 @@ window.memberIncidentForm = function (areas, suggestedAreaId) {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     },
-                    body: new FormData(this.$refs.form),
+                    body: formData,
                 });
 
                 if (response.status === 419) {
@@ -358,7 +406,7 @@ window.memberIncidentForm = function (areas, suggestedAreaId) {
                 }
 
                 this.success = data.incident;
-                this.clearPhoto();
+                this.clearPhotos();
             } catch (error) {
                 this.generalError = error.message || 'Laporan gagal dikirim. Silakan coba lagi.';
                 this.scrollToTop();

@@ -228,6 +228,7 @@
         
     </div>
 
+    @can('create', \App\Models\Incident::class)
     {{-- FAB: Lapor Insiden --}}
     <button type="button"
             @click="$dispatch('open-incident-modal')"
@@ -238,6 +239,7 @@
     </button>
 
     <x-member-incident-modal :areas="$reportAreas ?? []" :suggested-area-id="$suggestedAreaId ?? null" />
+    @endcan
 
 </body>
 </html>

@@ -55,7 +55,7 @@
         </div>
         <div class="flex items-end justify-between">
             <p class="text-headline-lg font-headline-lg text-on-surface">{{ $completedOnTime }}</p>
-            <p class="text-label-md font-label-md text-emerald-600 font-bold mb-1">{{ $completionPercentage }}% dari total</p>
+            <p class="text-label-md font-label-md text-emerald-600 font-bold mb-1">{{ $completionPercentage }}% dari total checkpoint</p>
         </div>
     </div>
 
@@ -86,10 +86,90 @@
         </div>
         <div class="flex items-end justify-between relative z-10">
             <p class="text-headline-lg font-headline-lg font-bold">{{ $incidentsToday }}</p>
-            <p class="text-label-md font-label-md opacity-80 mb-1">butuh tindak lanjut</p>
+            <p class="text-label-md font-label-md opacity-80 mb-1">laporan hari ini</p>
         </div>
     </div>
 </div>
+
+@php
+    $totalTrendScans = array_sum(array_column($trend, 'scans'));
+    $totalTrendIncidents = array_sum(array_column($trend, 'incidents'));
+    $totalCompletedDays = array_sum(array_column($dailyCompletion, 'completed'));
+    $totalIncompleteDays = array_sum(array_column($dailyCompletion, 'incomplete'));
+@endphp
+
+<!-- Analytics Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-md mb-xl">
+
+    <!-- Chart 1: Tren Patroli vs Insiden -->
+    <div class="soft-card p-md flex flex-col">
+        <div class="flex items-start justify-between gap-sm mb-md">
+            <div>
+                <h3 class="text-headline-md font-headline-md text-on-surface">Tren Patroli vs Insiden</h3>
+                <p class="text-body-sm font-body-sm text-secondary mt-1">7 hari terakhir</p>
+            </div>
+            <div class="flex items-center gap-md text-right flex-shrink-0">
+                <div>
+                    <p class="text-title-lg font-bold text-primary">{{ $totalTrendScans }}</p>
+                    <p class="text-label-md text-secondary">Scan</p>
+                </div>
+                <div>
+                    <p class="text-title-lg font-bold text-red-600">{{ $totalTrendIncidents }}</p>
+                    <p class="text-label-md text-secondary">Insiden</p>
+                </div>
+            </div>
+        </div>
+
+        @if($totalTrendScans + $totalTrendIncidents > 0)
+            <div class="relative h-[300px]">
+                <canvas id="patrol-incident-chart" role="img"
+                        aria-label="Grafik tren jumlah scan patroli dan insiden selama 7 hari terakhir"></canvas>
+            </div>
+        @else
+            <div class="flex flex-1 flex-col items-center justify-center py-xl text-center">
+                <span class="material-symbols-outlined text-[32px] text-secondary mb-xs">monitoring</span>
+                <p class="text-body-sm font-semibold text-on-surface mb-1">Belum ada data 7 hari terakhir</p>
+                <p class="text-body-sm text-secondary">Aktivitas scan dan insiden akan tampil di sini.</p>
+            </div>
+        @endif
+    </div>
+
+    <!-- Chart 2: Rute Selesai 100% vs Belum -->
+    <div class="soft-card p-md flex flex-col">
+        <div class="flex items-start justify-between gap-sm mb-md">
+            <div>
+                <h3 class="text-headline-md font-headline-md text-on-surface">Rute Selesai 100% vs Belum</h3>
+                <p class="text-body-sm font-body-sm text-secondary mt-1">7 hari terakhir</p>
+            </div>
+            <div class="flex items-center gap-md text-right flex-shrink-0">
+                <div>
+                    <p class="text-title-lg font-bold text-emerald-600">{{ $totalCompletedDays }}</p>
+                    <p class="text-label-md text-secondary">Selesai</p>
+                </div>
+                <div>
+                    <p class="text-title-lg font-bold text-amber-600">{{ $totalIncompleteDays }}</p>
+                    <p class="text-label-md text-secondary">Belum</p>
+                </div>
+            </div>
+        </div>
+
+        @if($totalCompletedDays + $totalIncompleteDays > 0)
+            <div class="relative h-[300px]">
+                <canvas id="route-completion-chart" role="img"
+                        aria-label="Grafik jumlah rute yang selesai 100% dan belum selesai per hari"></canvas>
+            </div>
+        @else
+            <div class="flex flex-1 flex-col items-center justify-center py-xl text-center">
+                <span class="material-symbols-outlined text-[32px] text-secondary mb-xs">route</span>
+                <p class="text-body-sm font-semibold text-on-surface mb-1">Belum ada rute terjadwal</p>
+                <p class="text-body-sm text-secondary">Penyelesaian rute akan tampil di sini.</p>
+            </div>
+        @endif
+    </div>
+</div>
+
+<script type="application/json" id="cc-trend-data">@json($trend)</script>
+<script type="application/json" id="cc-completion-data">@json($dailyCompletion)</script>
 
 <!-- Main Content Two Columns -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
@@ -110,9 +190,11 @@
                     </h3>
                     <p class="text-body-sm text-secondary mt-1">Aktivitas checkpoint terbaru dari seluruh petugas</p>
                 </div>
-                <button class="text-primary text-body-sm font-bold hover:underline flex items-center gap-xs whitespace-nowrap">
+                @can('viewAny', \App\Models\PatrolLog::class)
+                <a href="{{ route('patrol-history.index') }}" class="text-primary text-body-sm font-bold hover:underline flex items-center gap-xs whitespace-nowrap">
                     Lihat Semua <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                </button>
+                </a>
+                @endcan
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -129,11 +211,11 @@
                         <tr class="border-b border-outline-variant {{ $loop->even ? 'bg-surface-container-low' : '' }} hover:bg-surface-container-lowest transition-colors">
                             <td class="py-sm px-md flex items-center gap-sm">
                                 <div class="w-8 h-8 bg-primary-container text-white rounded-full flex items-center justify-center font-bold text-xs">
-                                    {{ strtoupper(substr($log->user->name, 0, 2)) }}
+                                    {{ strtoupper(substr($log->user?->name ?? 'NA', 0, 2)) }}
                                 </div>
-                                <span>{{ $log->user->name }}</span>
+                                <span>{{ $log->user?->name ?? '-' }}</span>
                             </td>
-                            <td class="py-sm px-md">{{ $log->checkpoint->checkpoint_name }}</td>
+                            <td class="py-sm px-md">{{ $log->checkpoint?->checkpoint_name ?? '-' }}</td>
                             <td class="py-sm px-md text-secondary">{{ \Carbon\Carbon::parse($log->scanned_at)->format('H:i') }} WIB</td>
                             <td class="py-sm px-md">
                                 @if($log->status === 'on_time')
@@ -157,50 +239,74 @@
             </div>
         </div>
 
-        <!-- Denah Area Patroli -->
+        <!-- Progres Patroli per Rute -->
         <div class="soft-card overflow-hidden flex flex-col">
             <div class="p-md border-b border-outline-variant bg-surface-container-low">
-                <h3 class="text-headline-md font-headline-md text-on-surface">Denah Area Patroli</h3>
-                <p class="text-body-sm font-body-sm text-secondary">Visualisasi posisi petugas dan titik checkpoint secara real-time</p>
+                <h3 class="text-headline-md font-headline-md text-on-surface">Progres Patroli per Rute</h3>
+                <p class="text-body-sm font-body-sm text-secondary">Status checkpoint setiap rute hari ini</p>
             </div>
+
             <div class="p-md">
-                <div class="relative rounded-lg overflow-hidden border border-outline-variant bg-surface-container-low">
-                    <img alt="Denah Area Patroli" class="w-full h-auto object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIH31aQjbYglmEbrKXCPvmIlBDi-RucNohgJ6ubBpQWIjZ5c5n95Zjg7l9IGxq2u6jiVuFS7i0rwbLS1a0VLh9cXc4WjpBiSDNp1JnfbgtDSkNfzpfRlwW1uYZKWzIwaB50hm1rZVm3MdCNeSj80oPLeucKEHKjh03yJ6gN2o9n3sbG06WFG_bvw2fG1jUhna0P36xIu4tRDRnThk1orInGdiGt6EHEdaMeMKmoDvWVzoEHzt0KNQs">
+                @php
+                    $routeStateMeta = [
+                        'completed' => ['label' => 'Selesai', 'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200', 'bar' => 'bg-emerald-500'],
+                        'ongoing' => ['label' => 'Berjalan', 'class' => 'bg-blue-50 text-blue-700 border-blue-200', 'bar' => 'bg-primary'],
+                        'upcoming' => ['label' => 'Belum Mulai', 'class' => 'bg-slate-50 text-slate-600 border-slate-200', 'bar' => 'bg-slate-400'],
+                        'missed' => ['label' => 'Terlewat', 'class' => 'bg-amber-50 text-amber-700 border-amber-200', 'bar' => 'bg-amber-500'],
+                    ];
+                @endphp
 
-                    <div class="absolute top-[45%] left-[25%] group cursor-pointer">
-                        <div class="relative">
-                            <span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping"></span>
-                            <div class="relative h-3 w-3 bg-primary rounded-full border-2 border-white"></div>
+                @forelse($routeProgress as $route)
+                    @php $meta = $routeStateMeta[$route['state']] ?? $routeStateMeta['upcoming']; @endphp
+                    <div class="py-md border-b border-outline-variant last:border-b-0">
+                        <div class="flex items-start justify-between gap-md mb-sm">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-xs flex-wrap">
+                                    <p class="text-body-sm font-bold text-on-surface truncate">{{ $route['name'] }}</p>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full border text-label-sm font-bold {{ $meta['class'] }}">{{ $meta['label'] }}</span>
+                                </div>
+                                <p class="text-label-md text-secondary mt-1">
+                                    {{ $route['area'] }} &bull; Shift {{ $route['shift'] }} &bull; {{ $route['start_time'] }}–{{ $route['end_time'] }}
+                                </p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-body-sm font-bold text-on-surface">{{ $route['scanned'] }}/{{ $route['total'] }}</p>
+                                <p class="text-label-md text-secondary">{{ $route['percent'] }}%</p>
+                            </div>
                         </div>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-on-surface text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-10">
-                            Petugas: Ahmad Riyadi &ndash; Gedung Utama
-                        </div>
-                    </div>
-                    <div class="absolute top-[65%] left-[60%] group cursor-pointer">
-                        <div class="relative">
-                            <span class="absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75 animate-ping"></span>
-                            <div class="relative h-3 w-3 bg-secondary rounded-full border-2 border-white"></div>
-                        </div>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-on-surface text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-10">
-                            Petugas: Budi Santoso &ndash; Area Parkir
-                        </div>
-                    </div>
-                </div>
 
+                        <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-700 {{ $meta['bar'] }}" style="width: {{ $route['percent'] }}%"></div>
+                        </div>
+
+                        <p class="mt-1 text-label-md text-secondary">
+                            @if($route['last_scanned_at'])
+                                Scan terakhir: {{ $route['last_scanned_at'] }} WIB
+                            @else
+                                Belum ada scan hari ini
+                            @endif
+                        </p>
+                    </div>
+                @empty
+                    <div class="flex flex-col items-center justify-center py-xl text-center">
+                        <div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center mb-md">
+                            <span class="material-symbols-outlined text-[32px] text-secondary">route</span>
+                        </div>
+                        <p class="text-body-sm font-semibold text-on-surface mb-1">Belum ada rute terjadwal</p>
+                        <p class="text-body-sm text-secondary max-w-[220px]">Rute yang dijadwalkan akan tampil di sini beserta progres checkpoint-nya.</p>
+                    </div>
+                @endforelse
+
+                @if(count($routeProgress) > 0)
                 <div class="mt-md flex flex-wrap gap-md border-t border-outline-variant pt-md">
+                    @foreach($routeStateMeta as $meta)
                     <div class="flex items-center gap-xs">
-                        <span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-                        <span class="text-label-md font-label-md text-secondary">Checkpoint Selesai</span>
+                        <span class="w-2.5 h-2.5 rounded-full {{ $meta['bar'] }}"></span>
+                        <span class="text-label-md font-label-md text-secondary">{{ $meta['label'] }}</span>
                     </div>
-                    <div class="flex items-center gap-xs">
-                        <span class="material-symbols-outlined text-secondary text-[18px]">radio_button_unchecked</span>
-                        <span class="text-label-md font-label-md text-secondary">Checkpoint Berikutnya</span>
-                    </div>
-                    <div class="flex items-center gap-xs">
-                        <div class="w-3 h-3 bg-primary rounded-full"></div>
-                        <span class="text-label-md font-label-md text-secondary">Posisi Petugas</span>
-                    </div>
+                    @endforeach
                 </div>
+                @endif
             </div>
         </div>
     </div>
@@ -227,7 +333,7 @@
                     <p class="text-body-sm font-body-sm text-secondary mb-2">{{ $incident->description }}</p>
                     <div class="flex items-center gap-xs">
                         <span class="material-symbols-outlined text-secondary text-[14px]">schedule</span>
-                        <p class="text-label-md font-label-md text-secondary">{{ \Carbon\Carbon::parse($incident->reported_at)->translatedFormat('d M, H:i') }} WIB &bull; Dilaporkan oleh {{ $incident->reportedBy->name }}</p>
+                        <p class="text-label-md font-label-md text-secondary">{{ \Carbon\Carbon::parse($incident->reported_at)->translatedFormat('d M, H:i') }} WIB &bull; Dilaporkan oleh {{ $incident->reportedBy?->name ?? '-' }}</p>
                     </div>
                 </div>
             </div>

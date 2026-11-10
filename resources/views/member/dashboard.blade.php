@@ -123,6 +123,7 @@
                     <span class="text-body-lg font-bold text-on-surface text-center">Semua<br>Jadwal</span>
                 </a>
 
+                @can('create', \App\Models\Incident::class)
                 <!-- Lapor Insiden -->
                 <button type="button" @click="$dispatch('open-incident-modal')"
                         class="bg-surface border border-outline-variant rounded-2xl p-lg flex flex-col items-center justify-center gap-md hover:border-red-500 hover:shadow-lg hover:shadow-red-500/10 transition-all group active:scale-95">
@@ -131,6 +132,7 @@
                     </div>
                     <span class="text-body-lg font-bold text-on-surface text-center">Lapor<br>Insiden</span>
                 </button>
+                @endcan
             </div>
         </div>
 

@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class PatrolSchedule extends Model
 {
@@ -47,6 +47,18 @@ class PatrolSchedule extends Model
     }
 
     /**
+     * Alias relasi shift_id.
+     *
+     * Kolom legacy `shift` masih ada di tabel, sehingga akses `$model->shift`
+     * mengembalikan nilai kolom lama dan bukan relasi. Gunakan `shiftMaster`
+     * untuk mendapatkan model Shift dari `shift_id`.
+     */
+    public function shiftMaster(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class, 'shift_id');
+    }
+
+    /**
      * Daftar checkpoint dalam jadwal patroli ini,
      * diurutkan berdasarkan sequence_number di tabel pivot.
      */
@@ -58,9 +70,9 @@ class PatrolSchedule extends Model
             'patrol_schedule_id',
             'checkpoint_id'
         )
-        ->withPivot('sequence_number')
-        ->orderByPivot('sequence_number', 'asc')
-        ->withTimestamps();
+            ->withPivot('sequence_number')
+            ->orderByPivot('sequence_number', 'asc')
+            ->withTimestamps();
     }
 
     // ─── Scope Jadwal Aktif ───────────────────────────────────────────────────
@@ -81,23 +93,23 @@ class PatrolSchedule extends Model
             // Status 'ongoing': selalu aktif
             $q->where('status', 'ongoing')
               // Status 'scheduled': aktif hanya dalam window jam
-              ->orWhere(function ($q2) use ($time) {
-                  $q2->where('status', 'scheduled')
-                     ->where(function ($q3) use ($time) {
-                         // Kasus normal (start <= end): now di antara start dan end
-                         $q3->whereRaw('start_time <= end_time')
-                            ->whereTime('start_time', '<=', $time)
-                            ->whereTime('end_time', '>=', $time)
-                            // Kasus lintas tengah malam (end < start): now >= start ATAU now <= end
-                            ->orWhere(function ($q4) use ($time) {
-                                $q4->whereRaw('end_time < start_time')
-                                   ->where(function ($q5) use ($time) {
-                                       $q5->whereTime('start_time', '<=', $time)
-                                          ->orWhereTime('end_time', '>=', $time);
-                                   });
-                            });
-                     });
-              });
+                ->orWhere(function ($q2) use ($time) {
+                    $q2->where('status', 'scheduled')
+                        ->where(function ($q3) use ($time) {
+                            // Kasus normal (start <= end): now di antara start dan end
+                            $q3->whereRaw('start_time <= end_time')
+                                ->whereTime('start_time', '<=', $time)
+                                ->whereTime('end_time', '>=', $time)
+                               // Kasus lintas tengah malam (end < start): now >= start ATAU now <= end
+                                ->orWhere(function ($q4) use ($time) {
+                                    $q4->whereRaw('end_time < start_time')
+                                        ->where(function ($q5) use ($time) {
+                                            $q5->whereTime('start_time', '<=', $time)
+                                                ->orWhereTime('end_time', '>=', $time);
+                                        });
+                                });
+                        });
+                });
         });
     }
 }

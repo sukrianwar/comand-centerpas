@@ -185,26 +185,54 @@
                             <span class="material-symbols-outlined text-amber-600 text-[32px]">add_a_photo</span>
                         </div>
                         <h3 class="text-title-lg font-bold text-on-surface mb-1">Ambil Foto Bukti</h3>
-                        <p class="text-body-md text-secondary mb-md">Checkpoint: <span class="font-bold text-on-surface" x-text="matchedCheckpointName"></span></p>
+                        <p class="text-body-md text-secondary mb-1">Checkpoint: <span class="font-bold text-on-surface" x-text="matchedCheckpointName"></span></p>
+                        <p class="text-body-sm text-secondary mb-md">
+                            Wajib <span class="font-bold text-on-surface">3–5 foto</span> dokumentasi.
+                            <span class="font-bold text-on-surface" x-text="`(${photos.length}/5)`"></span>
+                        </p>
 
                         {{-- Preview foto --}}
-                        <template x-if="photoPreview">
-                            <div class="mb-md">
-                                <img :src="photoPreview" class="w-48 h-48 object-cover rounded-2xl mx-auto border-2 border-outline-variant shadow-md" alt="Preview">
+                        <template x-if="photoPreviews.length > 0">
+                            <div class="grid grid-cols-3 gap-sm max-w-md mx-auto mb-md">
+                                <template x-for="(preview, index) in photoPreviews" :key="preview.url">
+                                    <div class="relative">
+                                        <img :src="preview.url" class="w-full aspect-square object-cover rounded-2xl border-2 border-outline-variant shadow-md" alt="Preview">
+                                        <button type="button" @click="removePhoto(index)" :disabled="isSubmitting"
+                                                class="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white shadow-md disabled:opacity-50"
+                                                aria-label="Hapus foto">
+                                            <span class="material-symbols-outlined text-[16px]">close</span>
+                                        </button>
+                                    </div>
+                                </template>
                             </div>
                         </template>
 
-                        <label class="inline-flex items-center gap-sm bg-surface-container border border-outline-variant text-on-surface py-md px-lg rounded-2xl font-semibold cursor-pointer hover:bg-surface-container-high transition-colors mb-md">
-                            <span class="material-symbols-outlined text-[22px]">photo_camera</span>
-                            <span x-text="photoPreview ? 'Ambil Ulang' : 'Buka Kamera'"></span>
-                            <input type="file" accept="image/*" capture="environment" class="hidden" @change="onPhotoSelected($event)">
-                        </label>
+                        <div class="flex flex-wrap items-center justify-center gap-sm mb-md">
+                            <label class="inline-flex items-center gap-sm bg-surface-container border border-outline-variant text-on-surface py-md px-lg rounded-2xl font-semibold cursor-pointer hover:bg-surface-container-high transition-colors"
+                                   :class="photos.length >= MAX_PHOTOS ? 'opacity-50 pointer-events-none' : ''">
+                                <span class="material-symbols-outlined text-[22px]">photo_camera</span>
+                                <span x-text="photos.length === 0 ? 'Buka Kamera' : 'Tambah Foto'"></span>
+                                <input type="file" accept="image/*" capture="environment" multiple class="hidden" @change="onPhotosSelected($event)">
+                            </label>
+                            <label class="inline-flex items-center gap-sm bg-surface-container border border-outline-variant text-on-surface py-md px-lg rounded-2xl font-semibold cursor-pointer hover:bg-surface-container-high transition-colors"
+                                   :class="photos.length >= MAX_PHOTOS ? 'opacity-50 pointer-events-none' : ''">
+                                <span class="material-symbols-outlined text-[22px]">photo_library</span>
+                                <span>Tambah dari Galeri</span>
+                                <input type="file" accept="image/*" multiple class="hidden" @change="onPhotosSelected($event)">
+                            </label>
+                        </div>
+
+                        <template x-if="photos.length > 0 && photos.length < MIN_PHOTOS">
+                            <p class="mb-md text-body-sm font-semibold text-amber-700">
+                                Kurang <span x-text="MIN_PHOTOS - photos.length"></span> foto lagi (minimal 3).
+                            </p>
+                        </template>
 
                         {{-- Tombol Kirim --}}
-                        <template x-if="photoFile">
+                        <template x-if="photos.length > 0">
                             <div class="mt-md">
                                 <button @click="submitScan()"
-                                        :disabled="isSubmitting"
+                                        :disabled="isSubmitting || photos.length < MIN_PHOTOS || photos.length > MAX_PHOTOS"
                                         class="w-full max-w-md mx-auto bg-primary text-on-primary py-lg px-xl rounded-2xl font-bold text-title-lg flex items-center justify-center gap-md transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
                                     <template x-if="isSubmitting">
                                         <span class="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
@@ -329,8 +357,10 @@ document.addEventListener('alpine:init', () => {
         scannedIds: [],
         matchedCheckpointId: null,
         matchedCheckpointName: '',
-        photoFile: null,
-        photoPreview: null,
+        MIN_PHOTOS: 3,
+        MAX_PHOTOS: 5,
+        photos: [],
+        photoPreviews: [],
 
         // ── Hasil ──────────────────────────────────────────────────────────
         resultMessage: '',
@@ -371,27 +401,71 @@ document.addEventListener('alpine:init', () => {
             this.matchedCheckpointName = cp.name;
 
             // Langsung ke langkah foto
+            this.resetPhotos();
             this.step = 'photo';
-            this.photoFile = null;
-            this.photoPreview = null;
         },
 
-        // ═══ STEP 2: Foto dipilih ════════════════════════════════════════
-        onPhotoSelected(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+        // ═══ STEP 2: Foto dipilih / ditambahkan ══════════════════════════
+        onPhotosSelected(event) {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
 
-            this.photoFile = file;
+            const remaining = Math.max(this.MAX_PHOTOS - this.photos.length, 0);
+            const accepted = files.slice(0, remaining);
 
-            // Buat preview
-            const reader = new FileReader();
-            reader.onload = (e) => { this.photoPreview = e.target.result; };
-            reader.readAsDataURL(file);
+            accepted.forEach((file) => {
+                if (!file.type.startsWith('image/')) return;
+
+                this.photos.push(file);
+                this.photoPreviews.push({
+                    url: URL.createObjectURL(file),
+                    name: file.name,
+                });
+            });
+
+            if (files.length > remaining) {
+                this.errorMessage = `Maksimal ${this.MAX_PHOTOS} foto bukti.`;
+            } else {
+                this.errorMessage = '';
+            }
+
+            // Reset input agar file yang sama bisa dipilih lagi.
+            event.target.value = '';
+        },
+
+        removePhoto(index) {
+            if (this.isSubmitting) return;
+
+            const preview = this.photoPreviews[index];
+            if (preview) {
+                URL.revokeObjectURL(preview.url);
+            }
+
+            this.photos.splice(index, 1);
+            this.photoPreviews.splice(index, 1);
+            this.errorMessage = '';
+        },
+
+        resetPhotos() {
+            this.photoPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+            this.photos = [];
+            this.photoPreviews = [];
         },
 
         // ═══ STEP 3: Submit ke server ════════════════════════════════════
         async submitScan() {
             if (this.isSubmitting) return;
+
+            if (this.photos.length < this.MIN_PHOTOS) {
+                this.errorMessage = `Foto bukti minimal ${this.MIN_PHOTOS} foto.`;
+                return;
+            }
+
+            if (this.photos.length > this.MAX_PHOTOS) {
+                this.errorMessage = `Foto bukti maksimal ${this.MAX_PHOTOS} foto.`;
+                return;
+            }
+
             this.isSubmitting = true;
             this.errorMessage = '';
             this.isSessionExpired = false;
@@ -399,7 +473,7 @@ document.addEventListener('alpine:init', () => {
             const formData = new FormData();
             formData.append('patrol_schedule_id', this.currentSchedule.id);
             formData.append('checkpoint_id', this.matchedCheckpointId);
-            formData.append('photo', this.photoFile);
+            this.photos.forEach((photo) => formData.append('photos[]', photo));
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
@@ -467,8 +541,7 @@ document.addEventListener('alpine:init', () => {
             this.errorMessage = '';
             this.matchedCheckpointId = null;
             this.matchedCheckpointName = '';
-            this.photoFile = null;
-            this.photoPreview = null;
+            this.resetPhotos();
             this.resultMessage = '';
         },
     }));

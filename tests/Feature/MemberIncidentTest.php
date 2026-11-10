@@ -26,6 +26,14 @@ function memberIncidentArea(string $code = 'AREA-01'): Area
     ]);
 }
 
+function memberIncidentPhotos(int $count = 3): array
+{
+    return array_map(
+        fn (int $index) => UploadedFile::fake()->image("bukti-insiden-{$index}.png", 800, 600),
+        range(1, $count)
+    );
+}
+
 function memberIncidentPayload(Area $area, array $overrides = []): array
 {
     return array_merge([
@@ -34,7 +42,7 @@ function memberIncidentPayload(Area $area, array $overrides = []): array
         'priority' => 'high',
         'area_id' => $area->id,
         'description' => 'Pipa bocor dan air menggenangi area parkir kendaraan operasional.',
-        'photo' => UploadedFile::fake()->image('bukti-insiden.png', 800, 600),
+        'photos' => memberIncidentPhotos(),
         'latitude' => -6.2000000,
         'longitude' => 106.8166667,
     ], $overrides);
@@ -64,7 +72,13 @@ test('member can submit an incident report with photo and initial history', func
     expect($incident->photo)->toStartWith('incident-photos/');
     expect($incident->reported_at)->not->toBeNull();
 
-    Storage::disk('public')->assertExists($incident->photo);
+    expect($incident->photos)->toHaveCount(3);
+    expect($incident->photo)->toBe($incident->photos->first()->photo_path);
+    $incident->photos->each(
+        fn ($photo) => Storage::disk('public')->assertExists($photo->photo_path)
+    );
+
+    $this->assertDatabaseCount('incident_photos', 3);
 
     $this->assertDatabaseHas('incident_status_history', [
         'incident_id' => $incident->id,
@@ -81,12 +95,44 @@ test('photo is required to submit an incident report', function () {
     $guard = memberIncidentUserWithRole('Security Guard');
     $area = memberIncidentArea();
     $payload = memberIncidentPayload($area);
-    unset($payload['photo']);
+    unset($payload['photos']);
 
     $this->actingAs($guard)
         ->post(route('member.incidents.store'), $payload, ['Accept' => 'application/json'])
         ->assertStatus(422)
-        ->assertJsonValidationErrors('photo');
+        ->assertJsonValidationErrors('photos');
+
+    expect(Incident::count())->toBe(0);
+});
+
+test('incident report requires at least three photos', function () {
+    Storage::fake('public');
+
+    $guard = memberIncidentUserWithRole('Security Guard');
+    $area = memberIncidentArea();
+
+    $this->actingAs($guard)
+        ->post(route('member.incidents.store'), memberIncidentPayload($area, [
+            'photos' => memberIncidentPhotos(2),
+        ]), ['Accept' => 'application/json'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('photos');
+
+    expect(Incident::count())->toBe(0);
+});
+
+test('incident report accepts at most five photos', function () {
+    Storage::fake('public');
+
+    $guard = memberIncidentUserWithRole('Security Guard');
+    $area = memberIncidentArea();
+
+    $this->actingAs($guard)
+        ->post(route('member.incidents.store'), memberIncidentPayload($area, [
+            'photos' => memberIncidentPhotos(6),
+        ]), ['Accept' => 'application/json'])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('photos');
 
     expect(Incident::count())->toBe(0);
 });
@@ -119,17 +165,55 @@ test('incident report rejects a deleted area', function () {
         ->assertJsonValidationErrors('area_id');
 });
 
-test('any authenticated member user can submit an incident report', function () {
+test('non security guard roles can not submit an incident report', function (string $roleName) {
     Storage::fake('public');
 
-    $admin = memberIncidentUserWithRole('Admin');
+    $user = memberIncidentUserWithRole($roleName);
     $area = memberIncidentArea();
 
-    $this->actingAs($admin)
+    $this->actingAs($user)
+        ->post(route('member.incidents.store'), memberIncidentPayload($area), ['Accept' => 'application/json'])
+        ->assertForbidden();
+
+    expect(Incident::count())->toBe(0);
+})->with(['Admin', 'Supervisor', 'Auditor']);
+
+test('super admin bypasses the incident create policy', function () {
+    Storage::fake('public');
+
+    $superAdmin = memberIncidentUserWithRole('Super Admin');
+    $area = memberIncidentArea();
+
+    $this->actingAs($superAdmin)
         ->post(route('member.incidents.store'), memberIncidentPayload($area), ['Accept' => 'application/json'])
         ->assertCreated();
+});
 
-    expect(Incident::firstOrFail()->user_id)->toBe($admin->id);
+test('admin and supervisor can view the incident list', function (string $roleName) {
+    $user = memberIncidentUserWithRole($roleName);
+
+    $this->actingAs($user)
+        ->get(route('incidents.index'))
+        ->assertOk();
+})->with(['Admin', 'Supervisor']);
+
+test('auditor can not view the incident list', function () {
+    $auditor = memberIncidentUserWithRole('Auditor');
+
+    $this->actingAs($auditor)
+        ->get(route('incidents.index'))
+        ->assertForbidden();
+});
+
+test('incident report trigger is hidden for admin', function () {
+    $admin = memberIncidentUserWithRole('Admin');
+    memberIncidentArea();
+
+    $this->actingAs($admin)
+        ->get(route('member.dashboard'))
+        ->assertOk()
+        ->assertDontSee('open-incident-modal', false)
+        ->assertDontSee(route('member.incidents.store'), false);
 });
 
 test('guest can not submit an incident report', function () {

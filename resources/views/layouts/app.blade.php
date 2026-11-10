@@ -44,6 +44,9 @@
       @resize.window="if (window.innerWidth >= 768) sidebarOpen = false"
       @keydown.escape.window="sidebarOpen = false; if (window.innerWidth < 768) $nextTick(() => $refs.menuButton?.focus())">
 
+    <!-- Progress bar navigasi -->
+    <div id="cc-progress" aria-hidden="true"></div>
+
     <!-- Mobile Sidebar Overlay -->
     <div x-show="sidebarOpen" x-cloak
          x-transition:enter="transition-opacity ease-linear duration-300"
@@ -135,7 +138,7 @@
             <p class="text-[10px] font-bold text-secondary/60 uppercase tracking-[0.12em] px-sm pt-sm pb-xs">Guard Management</p>
 
             <!-- Guard Management Accordion -->
-            <div x-data="{ open: {{ request()->routeIs('patrol-schedules.*', 'areas.*', 'petugas.*', 'shifts.*') ? 'true' : 'false' }} }">
+            <div x-data="{ open: {{ request()->routeIs('patrol-schedules.*', 'patrol-history.*', 'areas.*', 'petugas.*', 'shifts.*') ? 'true' : 'false' }} }">
                 <button @click="open = !open"
                     :aria-expanded="open.toString()"
                     aria-controls="guard-management-menu"
@@ -164,6 +167,13 @@
                        {{ request()->routeIs('areas.*') ? 'bg-primary/10 text-primary font-bold' : 'text-secondary hover:text-on-surface hover:bg-surface-container-high' }}">
                         <span class="material-symbols-outlined text-[16px]" @if(request()->routeIs('areas.*')) style="font-variation-settings: 'FILL' 1;" @endif>location_on</span>
                         <span>Area &amp; Checkpoint</span>
+                    </a>
+
+                    <a href="{{ route('patrol-history.index') }}"
+                       class="flex items-center gap-sm px-sm py-[7px] rounded-lg text-[12px] transition-all duration-150
+                       {{ request()->routeIs('patrol-history.*') ? 'bg-primary/10 text-primary font-bold' : 'text-secondary hover:text-on-surface hover:bg-surface-container-high' }}">
+                        <span class="material-symbols-outlined text-[16px]" @if(request()->routeIs('patrol-history.*')) style="font-variation-settings: 'FILL' 1;" @endif>history</span>
+                        <span>Riwayat Patroli</span>
                     </a>
 
                     <a href="{{ route('petugas.index') }}"
@@ -225,7 +235,7 @@
     <div class="flex-1 flex flex-col md:ml-64 h-full relative">
 
         <!-- TopNavBar -->
-        <header class="flex justify-between items-center px-gutter w-full sticky top-0 z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant/70 h-16 flex-shrink-0">
+        <header class="cc-topbar flex justify-between items-center px-gutter w-full sticky top-0 z-30 bg-surface/80 backdrop-blur-md border-b border-outline-variant/70 h-16 flex-shrink-0">
             <div class="md:hidden flex items-center gap-sm">
                 <button type="button" @click="sidebarOpen = true"
                         x-ref="menuButton"
@@ -264,7 +274,7 @@
         </header>
 
         <!-- Scrollable Content Canvas -->
-        <main class="flex-1 overflow-y-auto p-gutter lg:p-[32px] bg-transparent"
+        <main class="cc-content flex-1 overflow-y-auto p-gutter lg:p-[32px] bg-transparent"
               :style="(sidebarOpen && window.innerWidth < 768) ? 'overflow-y: hidden' : ''">
             <x-impersonation-banner />
             {{ $slot }}

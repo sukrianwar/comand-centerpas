@@ -10,7 +10,7 @@ class StoreIncidentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->user()?->can('create', Incident::class) ?? false;
     }
 
     public function rules(): array
@@ -25,7 +25,8 @@ class StoreIncidentRequest extends FormRequest
                 Rule::exists('areas', 'id')->whereNull('deleted_at'),
             ],
             'description' => ['required', 'string', 'max:2000'],
-            'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'photos' => ['required', 'array', 'min:3', 'max:5'],
+            'photos.*' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
         ];
@@ -44,10 +45,14 @@ class StoreIncidentRequest extends FormRequest
             'area_id.exists' => 'Area tidak ditemukan atau sudah dihapus.',
             'description.required' => 'Deskripsi insiden wajib diisi.',
             'description.max' => 'Deskripsi insiden maksimal 2.000 karakter.',
-            'photo.required' => 'Foto bukti wajib diunggah.',
-            'photo.image' => 'Foto bukti harus berupa gambar.',
-            'photo.mimes' => 'Format foto harus JPEG, PNG, atau WebP.',
-            'photo.max' => 'Ukuran foto maksimal 5 MB.',
+            'photos.required' => 'Foto bukti wajib diunggah.',
+            'photos.array' => 'Foto bukti tidak valid.',
+            'photos.min' => 'Foto bukti minimal 3 foto.',
+            'photos.max' => 'Foto bukti maksimal 5 foto.',
+            'photos.*.required' => 'Foto bukti wajib diunggah.',
+            'photos.*.image' => 'Foto bukti harus berupa gambar.',
+            'photos.*.mimes' => 'Format foto harus JPEG, PNG, atau WebP.',
+            'photos.*.max' => 'Ukuran foto maksimal 5 MB.',
             'latitude.numeric' => 'Koordinat lintang tidak valid.',
             'latitude.between' => 'Koordinat lintang tidak valid.',
             'latitude.required_with' => 'Koordinat lintang dan bujur harus diisi bersamaan.',
